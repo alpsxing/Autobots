@@ -12,15 +12,23 @@
 %% Exported Functions
 %%
 
--export([http2tcp/1, tcp2http/1, savesocketbin/4, deletesocketbin/3, logmessage/1]).
+-export([http2tcp/1, tcp2http/1]).
+-export([savesocketbin/4, deletesocketbin/3]).
+-export([logmessage/2, logmessage/3,logmessagetryagain/3,logmessagetryagain/4]).
 
 %%
 %% API Functions
 %%
 
+%%
+%% Convert the data from terminal to http package
+%%
 tcp2http(Bin) ->
     Bin.
 
+%%
+%% Convert the data from http to terminal package
+%%
 http2tcp(Bin) ->
     Bin.
 
@@ -62,9 +70,57 @@ deletesocketbin(State,Socket,TimeStamp) ->
 	%%TimeStamp,
 	ok.
 
-logmessage(Msg) ->
-	Msg,
-	ok.
+logmessage(Format,StateTable) ->
+	%% !!!
+	%% Some log here
+	%% !!!
+	[{displaylog,Value}] = ets:lookup(StateTable, displaylog),
+	if
+		Value == true ->
+			io:format(Format);
+		Value == false ->
+			ok
+	end.
+
+logmessagetryagain(Format,Count,StateTable) ->
+	%% !!!
+	%% Some log here
+	%% !!!
+	[{displaylog,Value}] = ets:lookup(StateTable, displaylog),
+	if
+		Value == true ->
+			io:format(Format),
+			io:format("Total fails and exceptions count : ~p~n",[Count]),
+			io:format("Try again~n");
+		Value == false ->
+			ok
+	end.
+
+logmessagetryagain(Format,Data,Count,StateTable) ->
+	%% !!!
+	%% Some log here
+	%% !!!
+	[{displaylog,Value}] = ets:lookup(StateTable, displaylog),
+	if
+		Value == true ->
+			io:format(Format,Data),
+			io:format("Total fails and exceptions count : ~p~n",[Count]),
+			io:format("Try again~n");
+		Value == false ->
+			ok
+	end.
+
+logmessage(Format,Data,StateTable) ->
+	%% !!!
+	%% Some log here
+	%% !!!
+	[{displaylog,Value}] = ets:lookup(StateTable, displaylog),
+	if
+		Value == true ->
+			io:format(Format,Data);
+		Value == false ->
+			ok
+	end.
 
 %%
 %% Local Functions

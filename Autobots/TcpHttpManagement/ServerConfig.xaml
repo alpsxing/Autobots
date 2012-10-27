@@ -1,0 +1,36 @@
+﻿<Window x:Class="TcpHttpManagement.ServerConfig"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Server Configuration" Height="170" Width="400" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Icon="/TcpHttpManagement;component/Resources/Computer.ico">
+    <Grid Margin="3">
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition Height="10"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="125"/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Label Grid.Row="0" Grid.Column="0" Content="Server IP : " HorizontalAlignment="Right" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="4" Text="{Binding Path=ServerIP,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                 Margin="0,3,3,3" TextAlignment="Left" VerticalAlignment="Center"/>
+        <Label Grid.Row="1" Grid.Column="0" Content="Server Port : " HorizontalAlignment="Right" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Path=ServerPort,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                 Margin="0,3,3,3" TextAlignment="Left" Width="75" HorizontalAlignment="Left" VerticalAlignment="Center"
+                 Foreground="{Binding Path=ServerPortFG,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
+        <Label Grid.Row="2" Grid.Column="0" Content="Auto Interval (s) : " HorizontalAlignment="Right" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Path=AutoInterval,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                 Margin="0,3,3,3" TextAlignment="Left" Width="75" HorizontalAlignment="Left" VerticalAlignment="Center"
+                 Foreground="{Binding Path=AutoIntervalFG,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
+        <Button Grid.Row="4" Grid.Column="2" Margin="3" Content="OK"
+                IsEnabled="{Binding Path=DataValid,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
+                Click="OK_Button_Click"/>
+        <Button Grid.Row="4" Grid.Column="3" Margin="3" Content="Cancel" IsCancel="True" IsDefault="True"
+                Click="Cancel_Button_Click"/>
+    </Grid>
+</Window>

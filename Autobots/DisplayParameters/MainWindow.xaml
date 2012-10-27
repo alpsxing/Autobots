@@ -1,0 +1,50 @@
+﻿<Window x:Class="DisplayParameters.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Display Parameters" Height="600" Width="800" Loaded="Window_Loaded">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top" Height="23">
+            <MenuItem Header="File">
+                <MenuItem Header="Save" Click="Save_MenuItemClicked"/>
+                <Separator/>
+                <MenuItem Header="Exit" Click="Exit_MenuItemClicked"/>
+            </MenuItem>
+        </Menu>
+        <ToolBar DockPanel.Dock="Top" Height="27">
+            <Button Content="Clear" Click="Clear_ButtonClicked"></Button>
+        </ToolBar>
+        <StatusBar DockPanel.Dock="Bottom" Height="27">
+            <CheckBox Content="Data Auto Scolling"
+                      Checked="DataAutoScrolling_CheckedUnchecked" Unchecked="DataAutoScrolling_CheckedUnchecked"
+                      IsThreeState="False" IsChecked="True"></CheckBox>
+        </StatusBar>
+        <DataGrid AutoGenerateColumns="False" Name="dgTestResults" ItemsSource="{Binding}" 
+                      CanUserAddRows="False" CanUserDeleteRows="True" 
+                      HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" 
+                      VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" 
+                      SelectionMode="Single" HeadersVisibility="Column">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Index" Width="50" MinWidth="50"
+                                        Binding="{Binding Path=ParIndex,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
+                                        IsReadOnly="True"/>
+                <DataGridTextColumn Header="Name" Width="200" MinWidth="50"
+                                        Binding="{Binding Path=ParName,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
+                                        IsReadOnly="True"/>
+                <DataGridTextColumn Header="Value" Width="500" MinWidth="50"
+                                        Binding="{Binding Path=ParValue,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
+                                        IsReadOnly="True"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <!--ListView Margin="2,0,2,2" Name="lvParList" ItemsSource="{Binding}"
+                ScrollViewer.HorizontalScrollBarVisibility="Visible"
+                ScrollViewer.VerticalScrollBarVisibility="Visible"
+                SelectionMode="Single">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Path=ParName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="200"/>
+                    <GridViewColumn Header="Value" DisplayMemberBinding="{Binding Path=ParValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="800"/>
+                </GridView>
+            </ListView.View>
+        </ListView-->
+    </DockPanel>
+</Window>

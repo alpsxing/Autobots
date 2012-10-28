@@ -8,7 +8,7 @@
             <Button Content="Clear Log" Click="ClearLog_ButtonClick" IsEnabled="{Binding Path=NotInRun,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
             <Separator/>
             <Label Content="IP" Margin="2" Foreground="Blue"/>
-            <TextBox Foreground="Blue" Margin="3" Width="100" Text="{Binding Path=ServerIPAddress,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
+            <TextBox Foreground="Blue" Margin="3" Width="80" Text="{Binding Path=ServerIPAddress,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
             <Label Foreground="Blue" Margin="2" Content="Port"/>
             <TextBox Foreground="Blue" Margin="3" Width="35" Text="{Binding Path=ServerPort,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
             <Separator/>
@@ -16,10 +16,13 @@
             <TextBox Foreground="Blue" Margin="3" Width="35" Text="{Binding Path=ServerRepeat,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
             <Label Foreground="Blue" Margin="2" Content="Request"/>
             <TextBox Foreground="Blue" Margin="3" Width="35" Text="{Binding Path=ServerRequest,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
+            <Label Foreground="Blue" Margin="2" Content="Interval(s)"/>
+            <TextBox Foreground="Blue" Margin="3" Width="35" Text="{Binding Path=MsgInterval,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
             <Separator/>
             <CheckBox Name="chkboxReceive" Content="Receiving Data" IsThreeState="False" IsChecked="True"
                       Checked="ReceiveData_CheckBox_CheckedUnchecked"
-                      Unchecked="ReceiveData_CheckBox_CheckedUnchecked"/>
+                      Unchecked="ReceiveData_CheckBox_CheckedUnchecked"
+                      IsEnabled="{Binding Path=NotInRun,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
         </ToolBar>
         <Grid>
             <Grid.RowDefinitions>
@@ -28,13 +31,24 @@
                 <RowDefinition></RowDefinition>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition></ColumnDefinition>
-                <ColumnDefinition Width="100"></ColumnDefinition>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="80"/>
+                <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <TextBox Grid.Row="0" Grid.Column="0" Margin="0,5,5,5" Text="{Binding Path=TextForSend,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
             <Button Grid.Row="0" Grid.Column="1" Margin="0,5,0,5" Content="Send" Click="Send_ButtonClick"
                     IsEnabled="{Binding Path=NotInRun,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-            <DataGrid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" AutoGenerateColumns="False"
+            <DockPanel Grid.Row="0" Grid.Column="2" Margin="3,3,0,3" >
+                <CheckBox Content="Auto Scrolling" HorizontalAlignment="Center" VerticalAlignment="Center"
+                          DockPanel.Dock="Left" IsThreeState="False"
+                          IsChecked="{Binding Path=LogAutoScrollingEnabled,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
+                <Label Content="{Binding Path=PassInformation,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                       Foreground="Green" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                <Label Content="{Binding Path=FailInformation,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                       Foreground="Red" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                <Grid/>
+            </DockPanel>
+            <DataGrid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" AutoGenerateColumns="False"
                       Name="dgSentReceived" ItemsSource="{Binding}" 
                       CanUserAddRows="False" CanUserDeleteRows="True" 
                       HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" 
@@ -44,17 +58,24 @@
                     <DataGridTextColumn Header="Index" Width="50" MinWidth="50"
                                             Binding="{Binding Path=Index,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
                                             IsReadOnly="True"/>
-                    <DataGridTextColumn Header="Sent" Width="300" MinWidth="50"
+                    <DataGridTemplateColumn MinWidth="30" MaxWidth="30">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Image Height="13" Source="{Binding Path=DataCorrectImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Sent" Width="270" MinWidth="50"
                                             Binding="{Binding Path=Sent,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
                                             IsReadOnly="True"/>
-                    <DataGridTextColumn Header="Received" Width="300" MinWidth="50"
+                    <DataGridTextColumn Header="Received" Width="270" MinWidth="50"
                                             Binding="{Binding Path=Received,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
                                             IsReadOnly="True"/>
                 </DataGrid.Columns>
             </DataGrid>
-            <GridSplitter Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Height="3"
+            <GridSplitter Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Height="3"
                           VerticalAlignment="Bottom" HorizontalAlignment="Stretch"/>
-            <RichTextBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Name="rtxtLog" IsReadOnly="True" 
+            <RichTextBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Name="rtxtLog" IsReadOnly="True" 
                          VerticalScrollBarVisibility="Auto"  HorizontalScrollBarVisibility="Auto">
                 <RichTextBox.Resources>
                     <Style TargetType="{x:Type Paragraph}">

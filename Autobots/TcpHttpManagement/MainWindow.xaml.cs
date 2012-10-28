@@ -1364,43 +1364,36 @@ namespace TcpHttpManagement
 
         #endregion
 
-        private void AddMessage2Oc(
-            LogItem.MessageFlowEnum msgFlow = LogItem.MessageFlowEnum.Self,
-            LogItem.StatusEnum status = LogItem.StatusEnum.None,
-            string msg = "")
-        {
-            LogItem li = null;
-            Dispatcher.Invoke((ThreadStart)delegate()
-            {
-                li = new LogItem()
-                 {
-                     Index = (_logDispOc.Count > 0) ? (_logDispOc.Last().Index + 1) : 1,
-                     TimeStamp = DateTime.Now,
-                     MsgFlow = msgFlow,
-                     Status = status,
-                     Message = msg
-                 };
-            }, null);
+		private void AddMessage2Oc(
+			LogItem.MessageFlowEnum msgFlow = LogItem.MessageFlowEnum.Self,
+			LogItem.StatusEnum status = LogItem.StatusEnum.None,
+			string msg = "")
+		{
+			Dispatcher.Invoke((ThreadStart)delegate()
+			{
+				LogItem li = new LogItem()
+					 {
+						 Index = (_logDispOc.Count > 0) ? (_logDispOc.Last().Index + 1) : 1,
+						 TimeStamp = DateTime.Now,
+						 MsgFlow = msgFlow,
+						 Status = status,
+						 Message = msg
+					 };
 
-            if (_logDispOc.Count >= MAX_LOG_COUNT)
-                _logDispOc.RemoveAt(0);
+				while (_logDispOc.Count >= _maxLogCountArray[MaxLogCountSelectedIndex])
+					_logDispOc.RemoveAt(0);
 
-            Dispatcher.Invoke((ThreadStart)delegate()
-            {
-                _logDispOc.Add(li);
-            }, null);
+				_logDispOc.Add(li);
 
-            if (_logOc.Count >= LOG_SAVE_INDI_COUNT)
-            {
-                SaveLog();
-                _logOc.Clear();
-            }
+				if (_logOc.Count >= LOG_SAVE_INDI_COUNT)
+				{
+					SaveLog();
+					_logOc.Clear();
+				}
 
-            Dispatcher.Invoke((ThreadStart)delegate()
-            {
-                _logOc.Add(li);
-            }, null);
-        }
+				_logOc.Add(li);
+			}, null);
+		}
 
         private void SaveLog()
         {
@@ -1503,7 +1496,8 @@ namespace TcpHttpManagement
         private void Start_Button_Click(object sender, RoutedEventArgs e)
         {
             InRun = true;
-            _requestQueue.Clear();
+			ServerValid = true;
+			_requestQueue.Clear();
             _manageCts = new CancellationTokenSource();
             _manageTask = Task.Factory.StartNew(
                 () =>
@@ -1526,6 +1520,7 @@ namespace TcpHttpManagement
                         }
                         catch (Exception) { }
                         InRun = false;
+						ServerValid = false;
                     }
                 }, _manageCts.Token);
         }
@@ -1631,7 +1626,7 @@ namespace TcpHttpManagement
 					break;
 				case MT_QRY_ALL_STATES_OK:
 					#region
-					string[] sa = body.Split(new string[] { ";,;" }, StringSplitOptions.RemoveEmptyEntries);
+					string[] sa = body.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
 					foreach (string si in sa)
 					{
 						string sit = si.Trim();
@@ -1980,7 +1975,7 @@ namespace TcpHttpManagement
 
 		}
 
-		private void SetLogCount_Button_click(object sender, RoutedEventArgs e)
+		private void QueryLogCount_Button_click(object sender, RoutedEventArgs e)
 		{
 
 		}
@@ -2001,6 +1996,31 @@ namespace TcpHttpManagement
 		}
 
 		private void SaveLogCount_Button_click(object sender, RoutedEventArgs e)
+		{
+
+		}
+
+		private void QueryTermCount_Button_click(object sender, RoutedEventArgs e)
+		{
+
+		}
+
+		private void QueryMsg2Terminal_Button_click(object sender, RoutedEventArgs e)
+		{
+
+		}
+
+		private void QueryMsg2Jit_Button_click(object sender, RoutedEventArgs e)
+		{
+
+		}
+
+		private void QueryMsg2Http_Button_click(object sender, RoutedEventArgs e)
+		{
+
+		}
+
+		private void QueryManTermCount_Button_click(object sender, RoutedEventArgs e)
 		{
 
 		}

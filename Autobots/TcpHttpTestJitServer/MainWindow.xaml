@@ -1,29 +1,14 @@
 ﻿<Window x:Class="TcpHttpTestJitServer.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Tcp Client" Height="600" Width="800">
+        Title="Jit Server" Height="600" Width="800" Loaded="Window_Load">
     <DockPanel>
         <ToolBar DockPanel.Dock="Top" Height="35">
             <Button Content="Clear Queue" Click="ClearQueue_ButtonClick" IsEnabled="{Binding Path=NotInRun,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
             <Button Content="Clear Log" Click="ClearLog_ButtonClick" IsEnabled="{Binding Path=NotInRun,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-            <Separator/>
-            <Label Content="IP" Margin="2" Foreground="Blue"/>
-            <TextBox Foreground="Blue" Margin="3" Width="100" Text="{Binding Path=ServerIPAddress,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
-            <Label Foreground="Blue" Margin="2" Content="Port"/>
-            <TextBox Foreground="Blue" Margin="3" Width="35" Text="{Binding Path=ServerPort,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
-            <Separator/>
-            <Label Foreground="Blue" Margin="2" Content="Repeat"/>
-            <TextBox Foreground="Blue" Margin="3" Width="35" Text="{Binding Path=ServerRepeat,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
-            <Label Foreground="Blue" Margin="2" Content="Request"/>
-            <TextBox Foreground="Blue" Margin="3" Width="35" Text="{Binding Path=ServerRequest,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
-            <Separator/>
-            <CheckBox Name="chkboxReceive" Content="Receiving Data" IsThreeState="False" IsChecked="True"
-                      Checked="ReceiveData_CheckBox_CheckedUnchecked"
-                      Unchecked="ReceiveData_CheckBox_CheckedUnchecked"/>
         </ToolBar>
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="35"></RowDefinition>
                 <RowDefinition></RowDefinition>
                 <RowDefinition></RowDefinition>
             </Grid.RowDefinitions>
@@ -31,10 +16,7 @@
                 <ColumnDefinition></ColumnDefinition>
                 <ColumnDefinition Width="100"></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <TextBox Grid.Row="0" Grid.Column="0" Margin="0,5,5,5" Text="{Binding Path=TextForSend,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
-            <Button Grid.Row="0" Grid.Column="1" Margin="0,5,0,5" Content="Send" Click="Send_ButtonClick"
-                    IsEnabled="{Binding Path=NotInRun,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-            <DataGrid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" AutoGenerateColumns="False"
+            <DataGrid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" AutoGenerateColumns="False"
                       Name="dgSentReceived" ItemsSource="{Binding}" 
                       CanUserAddRows="False" CanUserDeleteRows="True" 
                       HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" 
@@ -44,11 +26,14 @@
                     <DataGridTextColumn Header="Index" Width="50" MinWidth="50"
                                             Binding="{Binding Path=Index,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
                                             IsReadOnly="True"/>
-                    <DataGridTextColumn Header="Sent" Width="300" MinWidth="50"
-                                            Binding="{Binding Path=Sent,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
+                    <DataGridTextColumn Header="Time" Width="150" MinWidth="50"
+                                            Binding="{Binding Path=TimeStamp,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
                                             IsReadOnly="True"/>
-                    <DataGridTextColumn Header="Received" Width="300" MinWidth="50"
+                    <DataGridTextColumn Header="Received" Width="270" MinWidth="50"
                                             Binding="{Binding Path=Received,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
+                                            IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Sent" Width="270" MinWidth="50"
+                                            Binding="{Binding Path=Sent,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
                                             IsReadOnly="True"/>
                 </DataGrid.Columns>
             </DataGrid>

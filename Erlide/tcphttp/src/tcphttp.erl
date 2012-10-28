@@ -91,7 +91,7 @@ start() ->
 start(DisplayLog) ->
 	start(DisplayLog,?MSG_LEVEL_ERROR).
 start(DisplayLog,LogLevel) ->
-	start(?HTTP_SERVER,?MASTER_TCP_SERVER,?MASTER_TCP_SERVER_PORT,?SLAVE_TCP_SERVER,?SLAVE_TCP_SERVER_PORT,DisplayLog,LogLevel).
+	start(?HTTP_SERVER_NOPORT,?MASTER_TCP_SERVER,?MASTER_TCP_SERVER_PORT,?SLAVE_TCP_SERVER,?SLAVE_TCP_SERVER_PORT,DisplayLog,LogLevel).
 start(HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,DisplayLog,LogLevel) ->
 	init(DisplayLog,LogLevel),
 	%% !!!
@@ -222,7 +222,7 @@ connectmanagement(Listen,Count) ->
 							ets:insert(serverstatetable, {acceptmancontfail,0}),
 							[{mantermcount,ManCount}] = ets:lookup(serverstatetable, mantermcount),
 							ets:insert(serverstatetable, {mantermcount,ManCount+1}),
-							loginfo("Current man-term (~p)~n", [Socket]),
+							%%loginfo("Current man-term (~p)~n", [Socket]),
 				           	loopmanagement(Socket);
 						{error,Reason} ->
 							ets:insert(serverstatetable, {acceptmancontfail,ContCount+1}),
@@ -245,9 +245,9 @@ loopmanagement(Socket) ->
 			%% !!!
 			%% Do management here, for example, stop server, enaable/disable display, switch jit master/slave and etc.
 			%% !!!
-			loginfo("Data from man-term",Bin),
+			%%loginfo("Data from man-term",Bin),
 			BinResp = processmanagementdata(Bin),
-			loginfo("Data to man-term",BinResp),
+			%%loginfo("Data to man-term",BinResp),
 			case connectmanterm(Socket,BinResp) of
 				ok ->
 					inet:setopts(Socket,[{active,once}]),
@@ -264,7 +264,7 @@ loopmanagement(Socket) ->
 					ets:insert(serverstatetable, {mantermcount,ManCount-1})
 			end;
 		{tcp_closed,Socket} ->
-			logerror("Man-term close socket (~p)~n", [Socket]),
+			%%logerror("Man-term close socket (~p)~n", [Socket]),
 			[{mantermcount,ManCount}] = ets:lookup(serverstatetable, mantermcount),
 			ets:insert(serverstatetable, {mantermcount,ManCount-1});
 		{tcp_error,Socket} ->
@@ -801,67 +801,67 @@ dogetallstates() ->
 	[{usemasterjit,UseMaster}] = ets:lookup(serverstatetable,usemasterjit),
 	case UseMaster of
 		true ->
-			S2 = string:concat(S1, ";,;UseMaster:1");
+			S2 = string:concat(S1, ";UseMaster:1");
 		_ ->
-			S2 = string:concat(S1, ";,;UseMaster:0")
+			S2 = string:concat(S1, ";UseMaster:0")
 	end,
 	[{masterjitfail,MasterFC}] = ets:lookup(serverstatetable,masterjitfail),
-	S30 = string:concat(S2, ";,;MasterFC:"),
+	S30 = string:concat(S2, ";MasterFC:"),
 	S3 = string:concat(S30, integer_to_list(MasterFC)),
 	[{jitserverfail,JitFC}] = ets:lookup(serverstatetable,jitserverfail),
-	S40 = string:concat(S3, ";,;JitFC:"),
+	S40 = string:concat(S3, ";JitFC:"),
 	S4 = string:concat(S40, integer_to_list(JitFC)),
 	[{httpserverfail,HttpFC}] = ets:lookup(serverstatetable,httpserverfail),
-	S50 = string:concat(S4, ";,;HttpFC:"),
+	S50 = string:concat(S4, ";HttpFC:"),
 	S5 = string:concat(S50, integer_to_list(HttpFC)),
 	[{accepttermcontfail,AccTermCFC}] = ets:lookup(serverstatetable,accepttermcontfail),
-	S60 = string:concat(S5, ";,;AccTermCFC:"),
+	S60 = string:concat(S5, ";AccTermCFC:"),
 	S6 = string:concat(S60, integer_to_list(AccTermCFC)),
 	[{accepttermtotalfail,AccTermTFC}] = ets:lookup(serverstatetable,accepttermtotalfail),
-	S70 = string:concat(S6, ";,;AccTermTFC:"),
+	S70 = string:concat(S6, ";AccTermTFC:"),
 	S7 = string:concat(S70, integer_to_list(AccTermTFC)),
 	[{acceptmancontfail,AccMCFC}] = ets:lookup(serverstatetable,acceptmancontfail),
-	S80 = string:concat(S7, ";,;AccMCFC:"),
+	S80 = string:concat(S7, ";AccMCFC:"),
 	S8 = string:concat(S80, integer_to_list(AccMCFC)),
 	[{acceptmantotalfail,AccMTFC}] = ets:lookup(serverstatetable,acceptmantotalfail),
-	S90 = string:concat(S8, ";,;AccMTFC:"),
+	S90 = string:concat(S8, ";AccMTFC:"),
 	S9 = string:concat(S90, integer_to_list(AccMTFC)),
 	[{logserverlevel,LogLevel}] = ets:lookup(serverstatetable,logserverlevel),
-	S100 = string:concat(S9, ";,;LogLevel:"),
+	S100 = string:concat(S9, ";LogLevel:"),
 	S10 = string:concat(S100, integer_to_list(LogLevel)),
 	Msg2JitCount = ets:select_count(msg2jittable, [{{'$1','$2','$3'},[],[true]}]),
-	S110 = string:concat(S10, ";,;Msg2JitCount:"),
+	S110 = string:concat(S10, ";Msg2JitCount:"),
 	S11 = string:concat(S110, integer_to_list(Msg2JitCount)),
 	Msg2HttpCount = ets:select_count(msg2httptable, [{{'$1','$2','$3'},[],[true]}]),
-	S120 = string:concat(S11, ";,;Msg2HttpCount:"),
+	S120 = string:concat(S11, ";Msg2HttpCount:"),
 	S12 = string:concat(S120, integer_to_list(Msg2HttpCount)),
 	LogCount = ets:select_count(serverlogtable, [{{'$1','$2','$3'},[],[true]}]),
-	S130 = string:concat(S12, ";,;LogCount:"),
+	S130 = string:concat(S12, ";LogCount:"),
 	S13 = string:concat(S130, integer_to_list(LogCount)),
 	Msg2TermCount = ets:select_count(msg2terminaltable, [{{'$1','$2','$3'},[],[true]}]),
-	S140 = string:concat(S13, ";,;Msg2TermCount:"),
+	S140 = string:concat(S13, ";Msg2TermCount:"),
 	S14 = string:concat(S140, integer_to_list(Msg2TermCount)),
 	MTermInstCount = ets:select_count(maninstancetable, [{{'$1'},[],[true]}]),
-	S150= string:concat(S14, ";,;MTermInstCount:"),
+	S150= string:concat(S14, ";MTermInstCount:"),
 	S15 = string:concat(S150, integer_to_list(MTermInstCount)),
 	[{orilogserverlevel,OriLogLevel}] = ets:lookup(serverstatetable,orilogserverlevel),
-	S160 = string:concat(S15, ";,;OriLogLevel:"),
+	S160 = string:concat(S15, ";OriLogLevel:"),
 	S16 = string:concat(S160, integer_to_list(OriLogLevel)),
 	[{oridisplaylog,OriDisplayLog}] = ets:lookup(serverstatetable,oridisplaylog),
 	case OriDisplayLog of
 		true ->
-			S17 = string:concat(S16, ";,;OriDisplayLog:1");
+			S17 = string:concat(S16, ";OriDisplayLog:1");
 		_ ->
-			S17 = string:concat(S16, ";,;OriDisplayLog:0")
+			S17 = string:concat(S16, ";OriDisplayLog:0")
 	end,
 	[{termcount,TermCount}] = ets:lookup(serverstatetable,termcount),
-	S180= string:concat(S17, ";,;TermCount:"),
+	S180= string:concat(S17, ";TermCount:"),
 	S18 = string:concat(S180, integer_to_list(TermCount)),
 	[{mantermcount,MTermCount}] = ets:lookup(serverstatetable,mantermcount),
-	S190= string:concat(S18, ";,;MTermCount:"),
+	S190= string:concat(S18, ";MTermCount:"),
 	S19 = string:concat(S190, integer_to_list(MTermCount)),
 	TermInstCount = ets:select_count(terminstancetable, [{{'$1'},[],[true]}]),
-	S200= string:concat(S19, ";,;TermInstCount:"),
+	S200= string:concat(S19, ";TermInstCount:"),
 	S20 = string:concat(S200, integer_to_list(TermInstCount)),
 	{ok,S20}.	
 
@@ -922,7 +922,9 @@ connect(Listen,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Count) ->
 						{ok,Socket} ->
 				           	spawn(fun() -> connect(Listen,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,1) end),
 							ets:insert(serverstatetable, {accepttermcontfail,0}),
-							loginfo("Current term (~p)~n", [Socket]),
+							[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
+							ets:insert(serverstatetable, {termcount,TermCount+1}),
+							%%loginfo("Current term (~p)~n", [Socket]),
 				           	loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2);
 						{error,Reason} ->
 							ets:insert(serverstatetable, {accepttermcontfail,ContCount+1}),
@@ -948,17 +950,13 @@ loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2) ->
 			%% It is safe for the same terminal because each terminal is not allowed to report very frequenctly.
 			%% The time interval is 60m which is needed to be checked with the planner.
 			TimeStamp = calendar:now_to_local_time(erlang:now()),
-			%% !!!
-			%%TimeStamp = calendar:now_to_local_time(erlang:now()),
-			%%dataprocessor:savesocketbin(true,Socket,Bin,TimeStamp),
-			%% !!!
-			loginfo("Data from term",Bin),
+			%%loginfo("Data from term",Bin),
 			case httpservermessage(Bin) of
 				true ->
 		            HttpBin = dataprocessor:tcp2http(Bin),
-					loginfo("Data to http server : ~p~n",HttpBin),
+					%%loginfo("Data to http server : ~p~n",HttpBin),
 					HttpMsgCount=ets:select_count(msg2httptable, [{{'$1','$2','$3'},[],[true]}]),
-					loginfo("Already stored msg2http message count : ~p~n",[HttpMsgCount]),
+					%%loginfo("Already stored msg2http message count : ~p~n",[HttpMsgCount]),
 					[{httpserverfail,HttpFC}] = ets:lookup(serverstatetable, httpserverfail),
 					if
 						HttpFC > ?CONNECT_HTTP_MAX_COUNT ->
@@ -966,29 +964,22 @@ loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2) ->
 							%% We need to report this status to the terminal
 							%% How do we define this message data?
 							%% !!!
-							logerror("~p continous failures in http server and msg2http will be stored until http server is fixed~n",[?CONNECT_HTTP_MAX_COUNT]),
+							logerror("~p continous failures in http server and msg2http will be stored~n",[?CONNECT_HTTP_MAX_COUNT]),
 							ets:insert(msg2httptable, {TimeStamp,Socket,HttpBin}),
-							%% !!!
-							%% We should save the un-reported message to the disk in another process.
-							%% At the same time, we should clear the count in msg2httptable
-							%% Otherwise, the msg2httptable table will be increased infinitely.
-							%% !!!
 							if
-								HttpMsgCount > ?TO_HTTP_MAX_MESSAGE_COUNT ->
+								HttpMsgCount > ?TO_HTTP_MAX_MESSAGE_COUNT -> %% Should these data be saved and the msg2httptable be cleared?
 									ok;
 								HttpMsgCount =< ?TO_HTTP_MAX_MESSAGE_COUNT ->
 									ok
 							end;
 						HttpFC =< ?CONNECT_HTTP_MAX_COUNT ->
-							%% We use another process is because we don't need the response from the http server
-							spawn(fun()->connecthttpserver(HttpServer,Socket,TimeStamp,HttpBin) end)
+							connecthttpserver(HttpServer,Socket,TimeStamp,HttpBin) %% Only report this data to the http server
 					end;
 				_ ->
-					%% This message from the terminal doesn't need to be sent to the http server.
 					ok
 			end,
 			JitMsgCount=ets:select_count(msg2jittable, [{{'$1','$2','$3'},[],[true]}]),
-			loginfo("Already stored msg2jit message count : ~p~n",[JitMsgCount]),
+			%%loginfo("Already stored msg2jit message count : ~p~n",[JitMsgCount]),
 			[{jitserverfail,JitFC}] = ets:lookup(serverstatetable, jitserverfail),
 			if
 				JitFC > ?CONNECT_JIT_MAX_COUNT ->
@@ -996,69 +987,80 @@ loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2) ->
 					%% We need to report this status to the terminal
 					%% How do we define this message data?
 					%% !!!
-					logerror("~p continous failures in both jit servers and msg2jit will be stored until both servers are fixed~n~n",[?CONNECT_HTTP_MAX_COUNT]),
+					logerror("~p continous failures in both jit servers and msg2jit will be stored~n",[?CONNECT_HTTP_MAX_COUNT]),
 					ets:insert(msg2jittable, {TimeStamp,Socket,Bin}),
-					%% !!!
-					%% We should save the un-reported message to the disk in another process.
-					%% At the same time, we should clear the count in msg2jittable
-					%% Otherwise, the msg2jittable table will be increased infinitely.
-					%% !!!
 					if
-						JitMsgCount > ?TO_JIT_MAX_MESSAGE_COUNT ->
+						JitMsgCount > ?TO_JIT_MAX_MESSAGE_COUNT ->  %% Should these data be saved and the msg2jittable be cleared?
 							ok;
 						JitMsgCount =< ?TO_JIT_MAX_MESSAGE_COUNT ->
 							ok
-					end;
+					end,
+					%% !!!
+					%% Should send message to terminal before close
+					%% Please check which kind of message
+					%% !!!
+					connectterm(Socket,?MT_JIT_FAILURE),
+					closetcpsocket(Socket,"term"),
+					[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
+					ets:insert(serverstatetable, {termcount,TermCount-1});
 				JitFC =< ?CONNECT_JIT_MAX_COUNT ->
 					%% We must check which jit tcp sever we should use.
 					[{usemasterjit,UseMaster}] = ets:lookup(serverstatetable, usemasterjit),
 					case connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,UseMaster,Socket,TimeStamp,Bin) of
 						{ok, BinResp} ->
-							loginfo("Data from jit server : ~p~n",BinResp),
+							%%loginfo("Data from jit server : ~p~n",BinResp),
 							case connectterm(Socket,BinResp) of
 								ok ->
 						 	        inet:setopts(Socket,[{active,once}]),
 						            loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2);
 								{error,_} ->
 									logerror("Close term socket~n"),
-									closetcpsocket(Socket,"term")
+									closetcpsocket(Socket,"term"),
+									[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
+									ets:insert(serverstatetable, {termcount,TermCount-1})
 							end;
 						error ->
 							logerror("Both jit servers error~n"),
-							logerror("Close term socket (~p)~n", [Socket]),
 							%% !!!
 							%% Should send message to terminal before close
 							%% Please check which kind of message
 							%% !!!
 							connectterm(Socket,?MT_JIT_FAILURE),
-							closetcpsocket(Socket,"term")
+							closetcpsocket(Socket,"term"),
+							[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
+							ets:insert(serverstatetable, {termcount,TermCount-1})
 					end
 			end;
 		{tcp_closed,Socket} ->
-			logerror("Term close socket (~p)~n", [Socket]);
+			%%logerror("Term close socket (~p)~n", [Socket]),
+			[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
+			ets:insert(serverstatetable, {termcount,TermCount-1});
 		{tcp_error,Socket} ->
 			logerror("Term socket (~p) tcp_error~n", [Socket]),
-			logerror("Close term socket~n"),
 			%% !!!
 			%% Should server send message to terminal before close?
 			%% If so, please check which kind of message
 			%% Does tcp_error mean that server cannot send data to terminal?
 			%% !!!
-			closetcpsocket(Socket,"term");
+			closetcpsocket(Socket,"term"),
+			[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
+			ets:insert(serverstatetable, {termcount,TermCount-1});
 		Msg ->
 			logerror("Unknown server state for term socket (~p) : ~p~n", [Socket,Msg]),
-			logerror("Close term socket~n"),
 			%% !!!
 			%% Should server send message to terminal before close?
 			%% If so, please check which kind of message
 			%% !!!
 			connectterm(Socket,?UNKNWON_SOCKET_STATE),
-			closetcpsocket(Socket,"term")
+			closetcpsocket(Socket,"term"),
+			[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
+			ets:insert(serverstatetable, {termcount,TermCount-1})
  	after ?TERM_TCP_RECEIVE_TIMEOUT ->
 		logerror("No data from term (~p) after ~p ms~n", [Socket,?TERM_TCP_RECEIVE_TIMEOUT]),
-		logerror("Close term socket~n"),
 		connectterm(Socket,?UNKNWON_TERMINAL_STATE),
-		closetcpsocket(Socket,"term")
+		closetcpsocket(Socket,"term"),
+		[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
+		ets:insert(serverstatetable, {termcount,TermCount-1})
     end.
 	
 %%
@@ -1088,8 +1090,8 @@ connecthttpserver(HttpServer,Socket,TimeStamp,Bin) ->
 			ets:insert(serverstatetable, {httpserverfail,0}),
 			connecthttpserverstored(HttpServer);
 		{error,Reason} ->
-			logerror("Requesting http server (~p) fail : ~p~n",[HttpServer,Reason]),
-			logerror("Store msg2http : {~p:~p:~p}~n",[TimeStamp,Socket,Bin]),
+			logerror("Requesting http server fail : ~p~n",[Reason]),
+			logerror("Store msg2http~n"),
 			%% !!!
 			%% We need to report this status to the terminal
 			%% How do we define this message data?
@@ -1098,8 +1100,8 @@ connecthttpserver(HttpServer,Socket,TimeStamp,Bin) ->
 			ets:insert(msg2httptable, {TimeStamp,Socket,Bin})
 	catch
 		_:Why ->
-			logerror("Requesting http server (~p) exception : ~p~n",[HttpServer,Why]),
-			logerror("Store msg2http : {~p:~p:~p}~n",[TimeStamp,Socket,Bin]),
+			logerror("Requesting http server exception : ~p~n",[Why]),
+			logerror("Store msg2http~n"),
 			%% !!!
 			%% We need to report this status to the terminal
 			%% How do we define this message data?
@@ -1120,7 +1122,7 @@ connecthttpserverstored(HttpServer) ->
 connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,UseMaster,Socket,TimeStamp,Bin) ->
 	if
 		UseMaster == true ->
-			loginfo("Connect master jit server (~p:~p)~n",[TcpServer,TcpPort]),
+			%%loginfo("Connect master~n"),
 			[{masterjitfail,MJitFC}] = ets:lookup(serverstatetable, masterjitfail),
 			case connectonetcpserver(TcpServer,TcpPort,Bin) of
 				{ok,BinResp} ->
@@ -1131,12 +1133,12 @@ connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,UseMaster,Socket,TimeStam
 					connecttcpserverstored(TcpServer,TcpPort,TcpServer2,TcpPort2,true),
 					{ok,BinResp};
 				error ->
-					logerror("Master jit tcp server fails and try slave jit server (~p:~p)~n",[TcpServer2,TcpPort2]),
+					logerror("Master fails and try slave~n"),
 					ets:insert(serverstatetable, {masterjitfail,MJitFC+1}),
 					connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,false,Socket,TimeStamp,Bin)
 			end;
 		UseMaster == false ->
-			loginfo("Connect slave jit server (~p:~p)~n",[TcpServer2,TcpPort2]),
+			%%loginfo("Connect slave jit server~n"),
 			case connectonetcpserver(TcpServer2,TcpPort2,Bin) of
 				{ok,BinResp2} ->
 					%% !!!
@@ -1145,8 +1147,7 @@ connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,UseMaster,Socket,TimeStam
 					connecttcpserverstored(TcpServer,TcpPort,TcpServer2,TcpPort2,false),
 					{ok,BinResp2};
 				error ->
-					logerror("Slave jit server fails (~p:~p)~n",[TcpServer2,TcpPort2]),
-					logerror("Store msg2jit : {~p:~p:~p}~n",[TimeStamp,Socket,Bin]),
+					logerror("Slave jit server fails and store msg2jit~n"),
 					%% !!!
 					%% We need to report this status to the terminal
 					%% How do we define this message data?
@@ -1173,7 +1174,7 @@ connectonetcpserver(TcpServer,TcpPort,Bin) ->
 				ok ->
 					receive
 				        {tcp,Socket,BinResp} ->
-							loginfo("Close jit server socket (~p)~n", [Socket]),
+							%%loginfo("Close jit server socket (~p)~n", [Socket]),
 							closetcpsocket(Socket,"jit server"),
 							{ok,BinResp};
 						{tcp_closed,Socket} ->
@@ -1334,8 +1335,8 @@ processsavedrequests() ->
 loginfo(Format) ->
 	logserver(Format,?MSG_LEVEL_INFO).
 
-loginfo(Format,Data) ->
-	logserver(Format,Data,?MSG_LEVEL_INFO).
+%%loginfo(Format,Data) ->
+%%	logserver(Format,Data,?MSG_LEVEL_INFO).
 
 %%logwarning(Format) ->
 %%	logserver(Format,?MSG_LEVEL_WARNING).
@@ -1431,6 +1432,10 @@ logserver(FormatData,Level) ->
 								_ ->
 									ok
 							end								
-					end
-			end
+					end;
+				DisplayLog == false ->
+					ok
+			end;
+		LogLevel > Level ->
+			ok
 	end.

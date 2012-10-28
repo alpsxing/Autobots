@@ -104,6 +104,43 @@ namespace TcpHttpTestTcpClient
             }
         }
 
+		private string _msgInterval = "60";
+		public string MsgInterval
+		{
+			get
+			{
+				int i = 1;
+				if (int.TryParse(_msgInterval, out i) == false || i < 1)
+					_msgInterval = "5";
+				return _msgInterval;
+			}
+			set
+			{
+				int i = 1;
+				_msgInterval = value;
+				if (int.TryParse(_msgInterval, out i) == false || i < 1)
+					_msgInterval = "5";
+				NotifyPropertyChanged("MsgInterval");
+			}
+		}
+
+		public int MsgIntervalMs
+		{
+			get
+			{
+				int i = 5;
+				if (int.TryParse(MsgInterval, out i) == false || i < 1)
+				{
+					i = 5000;
+					MsgInterval = "5";
+				}
+				else
+					i = i * 1000;
+
+				return i;
+			}
+		}
+
 		private string _textForSend = "";
 		public string TextForSend
 		{
@@ -159,6 +196,98 @@ namespace TcpHttpTestTcpClient
             }
         }
 
+		/// <summary>
+		/// Never get/set this value because it is used for UI and please use LogIsAutoScrolling
+		/// </summary>
+		private bool? _logAutoScrollingEnabled = true;
+		/// <summary>
+		/// Never get/set this value because it is used for UI and please use LogIsAutoScrolling
+		/// </summary>
+		public bool? LogAutoScrollingEnabled
+		{
+			get
+			{
+				return _logAutoScrollingEnabled;
+			}
+			set
+			{
+				if (value == null)
+					_logAutoScrollingEnabled = false;
+				else
+					_logAutoScrollingEnabled = value;
+				NotifyPropertyChanged("LogAutoScrollingEnabled");
+			}
+		}
+
+		public bool LogIsAutoScrolling
+		{
+			get
+			{
+				if (LogAutoScrollingEnabled == null)
+					return false;
+				else
+					return (bool)LogAutoScrollingEnabled;
+			}
+		}
+
+		private int _passCount = 0;
+		public int PassCount
+		{
+			get
+			{
+				return _passCount;
+			}
+			set
+			{
+				_passCount = value;
+				NotifyPropertyChanged("PassCount");
+				PassInformation = "Pass : " + PassCount.ToString();
+			}
+		}
+
+		private string _passInfo = "Pass : 0";
+		public string PassInformation
+		{
+			get
+			{
+				return _passInfo;
+			}
+			set
+			{
+				_passInfo = value;
+				NotifyPropertyChanged("PassInformation");
+			}
+		}
+
+		private int _failCount = 0;
+		public int FailCount
+		{
+			get
+			{
+				return _failCount;
+			}
+			set
+			{
+				_failCount = value;
+				NotifyPropertyChanged("FailCount");
+				FailInformation = "Failures : " + FailCount.ToString();
+			}
+		}
+
+		private string _failInfo = "Failures : 0";
+		public string FailInformation
+		{
+			get
+			{
+				return _failInfo;
+			}
+			set
+			{
+				_failInfo = value;
+				NotifyPropertyChanged("FailInformation");
+			}
+		}
+
 		public MainWindow()
 		{
 			InitializeComponent();
@@ -170,12 +299,12 @@ namespace TcpHttpTestTcpClient
 
         private void SentReceivedOc_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            //if (_dataAutoScrolling == false)
-            //    return;
-
-            //lock (ObjLock)
-            {
-                if (SentReceivedOc.Count < 1)
+			lock (_objLock)
+			{
+				if (LogIsAutoScrolling == false || SentReceivedOc.Count < 1)
+					return;
+				
+				if (SentReceivedOc.Count < 1)
                     return;
                 var border = VisualTreeHelper.GetChild(dgSentReceived, 0) as Decorator;
                 if (border != null)
@@ -195,6 +324,8 @@ namespace TcpHttpTestTcpClient
             }
 
             InRun = true;
+			PassCount = 0;
+			FailCount = 0;
             if (ServerRequest != "1")
             {
                 Thread th = new Thread(new ThreadStart(ClientThreadTask));
@@ -240,7 +371,10 @@ namespace TcpHttpTestTcpClient
             {
                 client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 IPAddress local = IPAddress.Parse(ServerIPAddress);
-                IPEndPoint iep = new IPEndPoint(local, 5080);
+				int port = 5080;
+				if(int.TryParse(ServerPort,out port) == false)
+					port = 5080;
+				IPEndPoint iep = new IPEndPoint(local, port);
                 client.ReceiveTimeout = 60000;
                 if (count == 1)
                     PostLog(indexThreadDisplay + "Trying to connect...");
@@ -249,23 +383,23 @@ namespace TcpHttpTestTcpClient
                 client.Connect(iep);
                 if (client.Connected)
                 {
-                    for (int index = 0; index < count; index++)
-                    {
-                        if (count == 1)
-                        {
-                            PostLog(indexThreadDisplay + "Connected.");
-                            PostLog(indexThreadDisplay + "Trying to send \"" + TextForSend + "\"...");
-                        }
-                        else
-                        {
-                            PostLog(indexThreadDisplay + count.ToString() + " : " + index.ToString() + " : Connected.");
-                            PostLog(indexThreadDisplay + count.ToString() + " : " + index.ToString() + " : Trying to send \"" + TextForSend + "-" + indexThreadDisplay + count.ToString() + " : " + index.ToString() + "\"...");
-                        }
-                        client.Send(Encoding.ASCII.GetBytes(TextForSend + "-" + indexThreadDisplay + count.ToString() + " : " + index.ToString()));
-                        if (count == 1)
-                            PostLog(indexThreadDisplay + "Sent.");
-                        else
-                            PostLog(indexThreadDisplay + count.ToString() + " : " + index.ToString() + " : Sent.");
+					for (int index = 0; index < count; index++)
+					{
+						if (count == 1)
+						{
+							PostLog(indexThreadDisplay + "Connected.");
+							PostLog(indexThreadDisplay + "Trying to send \"" + TextForSend + "\"...");
+						}
+						else
+						{
+							PostLog(indexThreadDisplay + count.ToString() + " : " + index.ToString() + " : Connected.");
+							PostLog(indexThreadDisplay + count.ToString() + " : " + index.ToString() + " : Trying to send \"" + TextForSend + "-" + indexThreadDisplay + count.ToString() + " : " + index.ToString() + "\"...");
+						}
+						client.Send(Encoding.ASCII.GetBytes(TextForSend + "-" + indexThreadDisplay + count.ToString() + " : " + index.ToString()));
+						if (count == 1)
+							PostLog(indexThreadDisplay + "Sent.");
+						else
+							PostLog(indexThreadDisplay + count.ToString() + " : " + index.ToString() + " : Sent.");
 						if (_receivingData == true)
 						{
 							byte[] bytes = new byte[1024 * 16];
@@ -290,36 +424,57 @@ namespace TcpHttpTestTcpClient
 									PostLog(indexThreadDisplay + count.ToString() + " : " + index.ToString() + " : Received \"" + receivedText + "\".", Brushes.Blue);
 							}
 						}
-                        if (indexThread == -1)
-                        {
-                            Dispatcher.Invoke((ThreadStart)delegate()
-                            {
-                                SentReceivedOc.Add(new SentReceivedItem()
-                                {
-                                    Index = (SentReceivedOc.Count + 1).ToString(),
-                                    Sent = TextForSend + "-" + indexThreadDisplay + count.ToString() + " : " + index.ToString(),
-                                    Received = receivedText
-                                });
-                            }, null);
-                        }
-                        else
-                        {
-                            Dispatcher.BeginInvoke((ThreadStart)delegate()
-                            {
-                                SentReceivedOc.Add(new SentReceivedItem()
-                                {
-                                    Index = (SentReceivedOc.Count + 1).ToString(),
-                                    Sent = TextForSend + "-" + indexThreadDisplay + count.ToString() + " : " + index.ToString(),
-                                    Received = receivedText
-                                });
-                            }, null);
-                        }
-                    }
-                    client.Disconnect(false);
-                }
-                client.Close();
-                client.Dispose();
-            }
+						bool isCorrectData = false;
+						if (receivedText.EndsWith(TextForSend + "-" + indexThreadDisplay + count.ToString() + " : " + index.ToString()))
+						{
+							isCorrectData = true;
+							PassCount++;
+						}
+						else
+							FailCount++;
+						//if (indexThread == -1)
+						//{
+						//    Dispatcher.Invoke((ThreadStart)delegate()
+						//    {
+						//        SentReceivedOc.Add(new SentReceivedItem()
+						//        {
+						//            Index = SentReceivedOc.Count.ToString(),
+						//            Sent = TextForSend + "-" + indexThreadDisplay + count.ToString() + " : " + index.ToString(),
+						//            Received = receivedText,
+						//            DataCorrect = (isCorrectData) ? SentReceivedItem.DataCorrectEnum.Ok : SentReceivedItem.DataCorrectEnum.Error
+						//        });
+						//    }, null);
+						//}
+						//else
+						{
+							Dispatcher.Invoke((ThreadStart)delegate()
+							{
+								SentReceivedOc.Add(new SentReceivedItem()
+								{
+									Index = SentReceivedOc.Count.ToString(),
+									Sent = TextForSend + "-" + indexThreadDisplay + count.ToString() + " : " + index.ToString(),
+									Received = receivedText,
+									DataCorrect = (isCorrectData) ? SentReceivedItem.DataCorrectEnum.Ok : SentReceivedItem.DataCorrectEnum.Error
+								});
+							}, null);
+						}
+						if (ServerRepeat != "1")
+						{
+							PostLog((indexThreadDisplay + " Sleep " + MsgIntervalMs + "ms").Trim());
+							Thread.Sleep(MsgIntervalMs);
+						}
+					}
+					PostLog(indexThreadDisplay + "Trying to disconnecting ...");
+					client.Disconnect(false);
+					PostLog(indexThreadDisplay + "Disconnected.");
+				}
+				PostLog(indexThreadDisplay + "Trying to closing ...");
+				client.Close();
+				PostLog(indexThreadDisplay + "Closed.");
+				PostLog(indexThreadDisplay + "Trying to disposing ...");
+				client.Dispose();
+				PostLog(indexThreadDisplay + "Disposed.");
+			}
             catch (Exception ex)
             {
                 if (count == 1)
@@ -359,55 +514,79 @@ namespace TcpHttpTestTcpClient
 		}
 
         private void PostLog(string msg, SolidColorBrush scb)
-        {
-            if (ServerRequest != "1")
-            {
-                Dispatcher.BeginInvoke((ThreadStart)delegate()
-                {
-                    if (fldocLog.Blocks.Count > 100)
-                        fldocLog.Blocks.Remove(fldocLog.Blocks.FirstBlock);
-                    Run rch = new Run(msg);
-                    Paragraph pch = new Paragraph(rch);
-                    pch.Foreground = scb;
-                    fldocLog.Blocks.Add(pch);
-                    rtxtLog.ScrollToEnd();
-                }, null);
-            }
-            else
-            {
-                Dispatcher.Invoke((ThreadStart)delegate()
-                {
-                    if (fldocLog.Blocks.Count > 100)
-                        fldocLog.Blocks.Remove(fldocLog.Blocks.FirstBlock);
-                    Run rch = new Run(msg);
-                    Paragraph pch = new Paragraph(rch);
-                    pch.Foreground = scb;
-                    fldocLog.Blocks.Add(pch);
-                    rtxtLog.ScrollToEnd();
-                }, null);
-            }
-        }
+		{
+			lock(_objLock)
+			{
+				Dispatcher.Invoke((ThreadStart)delegate()
+				{
+					if (fldocLog.Blocks.Count > 100)
+						fldocLog.Blocks.Remove(fldocLog.Blocks.FirstBlock);
+					Run rch = new Run(msg);
+					Paragraph pch = new Paragraph(rch);
+					pch.Foreground = scb;
+					fldocLog.Blocks.Add(pch);
+					if (LogIsAutoScrolling == true)
+						rtxtLog.ScrollToEnd();
+				}, null);
+			}
+			//else
+			//{
+			//    Dispatcher.Invoke((ThreadStart)delegate()
+			//    {
+			//        if (fldocLog.Blocks.Count > 100)
+			//            fldocLog.Blocks.Remove(fldocLog.Blocks.FirstBlock);
+			//        Run rch = new Run(msg);
+			//        Paragraph pch = new Paragraph(rch);
+			//        pch.Foreground = scb;
+			//        fldocLog.Blocks.Add(pch);
+			//        rtxtLog.ScrollToEnd();
+			//    }, null);
+			//}
+		}
 
 		private void ClearQueue_ButtonClick(object sender, RoutedEventArgs e)
 		{
-			SentReceivedOc.Clear();
+			lock (_objLock)
+			{
+				SentReceivedOc.Clear();
+			}
 		}
 
 		private void ClearLog_ButtonClick(object sender, RoutedEventArgs e)
 		{
-			fldocLog.Blocks.Clear();
+			lock (_objLock)
+			{
+				fldocLog.Blocks.Clear();
+			}
 		}
 
 		private void ReceiveData_CheckBox_CheckedUnchecked(object sender, RoutedEventArgs e)
 		{
 			CheckBox cb = sender as CheckBox;
 			_receivingData = (cb.IsChecked == true);
-			cb.Content = (_receivingData) ? "Receiveing Data" : "No Receiving";
+			cb.Content = (_receivingData) ? "Receiving Data" : "No Receiving";
 		}
 	}
 
-	public class SentReceivedItem
+	public class INotifyPropertyChangedClass : INotifyPropertyChanged
 	{
+		public event PropertyChangedEventHandler PropertyChanged;
+		public void NotifyPropertyChanged(string propertyName)
+		{
+			if (PropertyChanged != null)
+				PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+		}
+	}
+
+	public class SentReceivedItem : INotifyPropertyChangedClass
+	{
+		public enum DataCorrectEnum
+		{
+			None,
+			Ok,
+			Error
+		}
+
 		private string _index = "";
 		public string Index
 		{
@@ -444,6 +623,49 @@ namespace TcpHttpTestTcpClient
 			set
 			{
 				_received = value;
+			}
+		}
+
+		private DataCorrectEnum _dataCorrect = DataCorrectEnum.None;
+		public DataCorrectEnum DataCorrect
+		{
+			get
+			{
+				return _dataCorrect;
+			}
+			set
+			{
+				_dataCorrect = value;
+				NotifyPropertyChanged("DataCorrect");
+				if (_dataCorrect == DataCorrectEnum.None)
+				{
+					DataCorrectImage = null;
+				}
+				else
+				{
+					DataCorrectImage = new BitmapImage();
+					DataCorrectImage.BeginInit();
+					if (_dataCorrect == DataCorrectEnum.Ok)
+						DataCorrectImage.UriSource = new Uri("pack://application:,,,/TcpHttpTestTcpClient;component/resources/status_ok.png");
+					else
+						DataCorrectImage.UriSource = new Uri("pack://application:,,,/TcpHttpTestTcpClient;component/resources/status_error.png");
+					DataCorrectImage.EndInit();
+				}
+				NotifyPropertyChanged("DataCorrectImage");
+			}
+		}
+
+		private BitmapImage _dataCorrectImage = null;
+		public BitmapImage DataCorrectImage
+		{
+			get
+			{
+				return _dataCorrectImage;
+			}
+			set
+			{
+				_dataCorrectImage = value;
+				NotifyPropertyChanged("DataCorrectImage");
 			}
 		}
 	}

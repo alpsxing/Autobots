@@ -50,7 +50,7 @@
         </StatusBar>
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="350" MinWidth="50"/>
+                <ColumnDefinition Width="360" MinWidth="50"/>
                 <ColumnDefinition MinWidth="50"/>
             </Grid.ColumnDefinitions>
             <DockPanel Grid.Column="0" Grid.ColumnSpan="1">
@@ -76,8 +76,9 @@
                                  Text="{Binding Path=Msg2Http,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=Msg2HttpFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
                         <Button Grid.Row="0" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshMsg2Http_Button_click"/>
-                        <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Clear" Click="ClearMsg2Http_Button_click"/>
+                        <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryMsg2Http_Button_click"/>
                         <Button Grid.Row="0" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveMsg2Http_Button_click"/>
+                        <Button Grid.Row="0" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearMsg2Http_Button_click"/>
                         <Label Grid.Row="1" Grid.Column="0" Content="JIT Server"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=Msg2JitFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
@@ -85,8 +86,9 @@
                                  Text="{Binding Path=Msg2Jit,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=Msg2JitFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
                         <Button Grid.Row="1" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshMsg2Jit_Button_click"/>
-                        <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Clear" Click="ClearMsg2Jit_Button_click"/>
+                        <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryMsg2Jit_Button_click"/>
                         <Button Grid.Row="1" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveMsg2Jit_Button_click"/>
+                        <Button Grid.Row="1" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearMsg2Jit_Button_click"/>
                         <Label Grid.Row="2" Grid.Column="0" Content="Terminal"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=Msg2TerminalFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
@@ -94,8 +96,9 @@
                                  Text="{Binding Path=Msg2Terminal,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=Msg2TerminalFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
                         <Button Grid.Row="2" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshMsg2Terminal_Button_click"/>
-                        <Button Grid.Row="2" Grid.Column="3" Margin="2,3,2,3" Content="Clear" Click="ClearMsg2Terminal_Button_click"/>
+                        <Button Grid.Row="2" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryMsg2Terminal_Button_click"/>
                         <Button Grid.Row="2" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveMsg2Terminal_Button_click"/>
+                        <Button Grid.Row="2" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearMsg2Terminal_Button_click"/>
                     </Grid>
                 </GroupBox>
                 <GroupBox DockPanel.Dock="Top" Header="Http/Jit Server Failures" Height="108">
@@ -160,6 +163,7 @@
                                  Text="{Binding Path=ManTermCount,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=ManTermCountFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
                         <Button Grid.Row="0" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshManTermCount_Button_click"/>
+                        <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryManTermCount_Button_click"/>
                         <Label Grid.Row="1" Grid.Column="0" Content="Term"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=TermCountFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
@@ -167,6 +171,7 @@
                                  Text="{Binding Path=TermCount,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=TermCountFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
                         <Button Grid.Row="1" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshTermCount_Button_click"/>
+                        <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryTermCount_Button_click"/>
                     </Grid>
                 </GroupBox>
                 <GroupBox DockPanel.Dock="Top" Header="Accept Terminal/Management Terminal Failures" Height="148">
@@ -287,9 +292,9 @@
                              TextAlignment="Left" Margin="0,3,0,3"
                              Foreground="{Binding Path=LogCountFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
                     <Button Grid.Row="5" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshLogCount_Button_click"/>
-                    <Button Grid.Row="5" Grid.Column="3" Margin="2,3,2,3" Content="Set" Click="SetLogCount_Button_click"/>
-                    <Button Grid.Row="5" Grid.Column="4" Margin="2,3,2,3" Content="Clear" Click="ClearLogCount_Button_click"/>
-                    <Button Grid.Row="5" Grid.Column="5" Margin="2,3,2,3" Content="Save" Click="SaveLogCount_Button_click"/>
+                    <Button Grid.Row="5" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryLogCount_Button_click"/>
+                    <Button Grid.Row="5" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveLogCount_Button_click"/>
+                    <Button Grid.Row="5" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearLogCount_Button_click"/>
                     <Grid/>
                 </Grid>
                 <Grid/>

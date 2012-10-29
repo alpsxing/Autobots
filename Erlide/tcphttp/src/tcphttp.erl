@@ -964,8 +964,9 @@ loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2) ->
 							%% We need to report this status to the terminal
 							%% How do we define this message data?
 							%% !!!
-							logerror("~p continous failures in http server and msg2http will be stored~n",[?CONNECT_HTTP_MAX_COUNT]),
+							logerror("~p continous failures in http server and msg2http&msg2jit will be stored~n",[?CONNECT_HTTP_MAX_COUNT]),
 							ets:insert(msg2httptable, {TimeStamp,Socket,HttpBin}),
+							ets:insert(msg2jittable, {TimeStamp,Socket,Bin}),
 							if
 								HttpMsgCount > ?TO_HTTP_MAX_MESSAGE_COUNT -> %% Should these data be saved and the msg2httptable be cleared?
 									ok;
@@ -973,63 +974,25 @@ loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2) ->
 									ok
 							end;
 						HttpFC =< ?CONNECT_HTTP_MAX_COUNT ->
-							connecthttpserver(HttpServer,Socket,TimeStamp,HttpBin) %% Only report this data to the http server
-					end;
-				_ ->
-					ok
-			end,
-			JitMsgCount=ets:select_count(msg2jittable, [{{'$1','$2','$3'},[],[true]}]),
-			%%loginfo("Already stored msg2jit message count : ~p~n",[JitMsgCount]),
-			[{jitserverfail,JitFC}] = ets:lookup(serverstatetable, jitserverfail),
-			if
-				JitFC > ?CONNECT_JIT_MAX_COUNT ->
-					%% !!!
-					%% We need to report this status to the terminal
-					%% How do we define this message data?
-					%% !!!
-					logerror("~p continous failures in both jit servers and msg2jit will be stored~n",[?CONNECT_HTTP_MAX_COUNT]),
-					ets:insert(msg2jittable, {TimeStamp,Socket,Bin}),
-					if
-						JitMsgCount > ?TO_JIT_MAX_MESSAGE_COUNT ->  %% Should these data be saved and the msg2jittable be cleared?
-							ok;
-						JitMsgCount =< ?TO_JIT_MAX_MESSAGE_COUNT ->
-							ok
-					end,
-					%% !!!
-					%% Should send message to terminal before close
-					%% Please check which kind of message
-					%% !!!
-					connectterm(Socket,?MT_JIT_FAILURE),
-					closetcpsocket(Socket,"term"),
-					[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
-					ets:insert(serverstatetable, {termcount,TermCount-1});
-				JitFC =< ?CONNECT_JIT_MAX_COUNT ->
-					%% We must check which jit tcp sever we should use.
-					[{usemasterjit,UseMaster}] = ets:lookup(serverstatetable, usemasterjit),
-					case connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,UseMaster,Socket,TimeStamp,Bin) of
-						{ok, BinResp} ->
-							%%loginfo("Data from jit server : ~p~n",BinResp),
-							case connectterm(Socket,BinResp) of
+							case connecthttpserver(HttpServer,Socket,TimeStamp,HttpBin) of
 								ok ->
-						 	        inet:setopts(Socket,[{active,once}]),
-						            loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2);
-								{error,_} ->
-									logerror("Close term socket~n"),
+									doconnecttcpserver(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Socket,TimeStamp,Bin);
+								{error,Reason} ->
+									logerror("Store msg2jit~n"),
+									ets:insert(msg2jittable, {TimeStamp,Socket,Bin}),
+									%% !!!
+									%% Should send message to terminal before close
+									%% Please check which kind of message
+									%% !!!
+									HttpError = string:concat(?MT_HTTP_FAILURE, Reason),
+									connectterm(Socket,HttpError),
 									closetcpsocket(Socket,"term"),
 									[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
 									ets:insert(serverstatetable, {termcount,TermCount-1})
-							end;
-						error ->
-							logerror("Both jit servers error~n"),
-							%% !!!
-							%% Should send message to terminal before close
-							%% Please check which kind of message
-							%% !!!
-							connectterm(Socket,?MT_JIT_FAILURE),
-							closetcpsocket(Socket,"term"),
-							[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
-							ets:insert(serverstatetable, {termcount,TermCount-1})
-					end
+							end
+					end;
+				false ->
+					doconnecttcpserver(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Socket,TimeStamp,Bin)
 			end;
 		{tcp_closed,Socket} ->
 			%%logerror("Term close socket (~p)~n", [Socket]),
@@ -1088,7 +1051,8 @@ connecthttpserver(HttpServer,Socket,TimeStamp,Bin) ->
 			%% Since http server is ok, send the stored msg2http to it
 			%% !!!
 			ets:insert(serverstatetable, {httpserverfail,0}),
-			connecthttpserverstored(HttpServer);
+			connecthttpserverstored(HttpServer),
+			ok;
 		{error,Reason} ->
 			logerror("Requesting http server fail : ~p~n",[Reason]),
 			logerror("Store msg2http~n"),
@@ -1097,7 +1061,8 @@ connecthttpserver(HttpServer,Socket,TimeStamp,Bin) ->
 			%% How do we define this message data?
 			%% !!!
 			ets:insert(serverstatetable, {httpserverfail,HttpFC+1}),
-			ets:insert(msg2httptable, {TimeStamp,Socket,Bin})
+			ets:insert(msg2httptable, {TimeStamp,Socket,Bin}),
+			{error,Reason}
 	catch
 		_:Why ->
 			logerror("Requesting http server exception : ~p~n",[Why]),
@@ -1107,12 +1072,68 @@ connecthttpserver(HttpServer,Socket,TimeStamp,Bin) ->
 			%% How do we define this message data?
 			%% !!!
 			ets:insert(serverstatetable, {httpserverfail,HttpFC+1}),
-			ets:insert(msg2httptable, {TimeStamp,Socket,Bin})
+			ets:insert(msg2httptable, {TimeStamp,Socket,Bin}),
+			{error,Why}
 	end.
 
 connecthttpserverstored(HttpServer) ->
 	HttpServer,
 	ok.
+
+doconnecttcpserver(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Socket,TimeStamp,Bin) ->
+	JitMsgCount=ets:select_count(msg2jittable, [{{'$1','$2','$3'},[],[true]}]),
+	%%loginfo("Already stored msg2jit message count : ~p~n",[JitMsgCount]),
+	[{jitserverfail,JitFC}] = ets:lookup(serverstatetable, jitserverfail),
+	if
+		JitFC > ?CONNECT_JIT_MAX_COUNT ->
+			%% !!!
+			%% We need to report this status to the terminal
+			%% How do we define this message data?
+			%% !!!
+			logerror("~p continous failures in both jit servers and msg2jit will be stored~n",[?CONNECT_HTTP_MAX_COUNT]),
+			ets:insert(msg2jittable, {TimeStamp,Socket,Bin}),
+			if
+				JitMsgCount > ?TO_JIT_MAX_MESSAGE_COUNT ->  %% Should these data be saved and the msg2jittable be cleared?
+					ok;
+				JitMsgCount =< ?TO_JIT_MAX_MESSAGE_COUNT ->
+					ok
+			end,
+			%% !!!
+			%% Should send message to terminal before close
+			%% Please check which kind of message
+			%% !!!
+			connectterm(Socket,?MT_JIT_FAILURE),
+			closetcpsocket(Socket,"term"),
+			[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
+			ets:insert(serverstatetable, {termcount,TermCount-1});
+		JitFC =< ?CONNECT_JIT_MAX_COUNT ->
+			%% We must check which jit tcp sever we should use.
+			[{usemasterjit,UseMaster}] = ets:lookup(serverstatetable, usemasterjit),
+			case connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,UseMaster,Socket,TimeStamp,Bin) of
+				{ok, BinResp} ->
+					%%loginfo("Data from jit server : ~p~n",BinResp),
+					case connectterm(Socket,BinResp) of
+						ok ->
+				 	        inet:setopts(Socket,[{active,once}]),
+				            loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2);
+						{error,_} ->
+							logerror("Close term socket~n"),
+							closetcpsocket(Socket,"term"),
+							[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
+							ets:insert(serverstatetable, {termcount,TermCount-1})
+					end;
+				error ->
+					logerror("Both jit servers error~n"),
+					%% !!!
+					%% Should send message to terminal before close
+					%% Please check which kind of message
+					%% !!!
+					connectterm(Socket,?MT_JIT_FAILURE),
+					closetcpsocket(Socket,"term"),
+					[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
+					ets:insert(serverstatetable, {termcount,TermCount-1})
+			end
+	end.
 
 %%
 %% The master tcp server will be first tried and if it fails, the slave tcpserver will be used.
@@ -1179,42 +1200,42 @@ connectonetcpserver(TcpServer,TcpPort,Bin) ->
 							{ok,BinResp};
 						{tcp_closed,Socket} ->
 							logerror("Jit server close socket (~p)~n", [Socket]),
-							error;
+							{error,"JIT server close socket."};
 						{tcp_error,Socket,Reason} ->
 				            logerror("Jit server socket (~p) error : ~p~n", [Socket,Reason]),
 							logerror("Close jit server socket~n"),
 							closetcpsocket(Socket,"jit server"),
-							error;
+							{error,Reason};
 						Msg ->
 							logerror("Unknown server state for jit server socket (~p) : ~p~n", [Socket,Msg]),
 							logerror("Close jit server socket~n"),
 							closetcpsocket(Socket,"jit server"),
-							error
+							{error,Msg}
 					after ?JIT_TCP_RECEIVE_TIMEOUT ->
 						logerror("No data from jit server (~p) after ~p ms~n", [Socket,?JIT_TCP_RECEIVE_TIMEOUT]),
 						logerror("Close jit server socket~n"),
 						closetcpsocket(Socket,"jit server"),
-						error
+						{error,"JIT server timeout in response"}
 					end;
 				{error,Reason} ->
 					logerror("Send data to jit server (~p) fails : ~p~n",[Socket,Reason]),
 					logerror("Close jit server socket~n"),
 					closetcpsocket(Socket,"jit tcp server"),
-					error
+					{error,Reason}
 			catch
                 _:Why ->
 					logerror("Send data to jit tcp server (~p) exception : ~p~n",[Socket,Why]),
 					logerror("Close jit server socket~n"),
 					closetcpsocket(Socket,"jit server"),
-					error
+					{error,Why}
 			end;
 		{error,Reason} ->
 			logerror("Connect jit server (~p:~p) fail : ~p~n",[TcpServer,TcpPort,Reason]),
-			error
+			{error,Reason}
 	catch
         _:Why ->
 			logerror("Connect jit tcp server (~p:~p) exception : ~p~n",[TcpServer,TcpPort,Why]),
-			error
+			{error,Why}
 	end.
 
 %%

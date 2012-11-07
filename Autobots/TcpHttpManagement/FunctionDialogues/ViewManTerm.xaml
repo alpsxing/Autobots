@@ -1,0 +1,62 @@
+﻿<Window x:Class="TcpHttpManagement.ViewManTerm"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="View Management Terminals" Height="400" Width="600" WindowStartupLocation="CenterScreen">
+    <DockPanel>
+        <StatusBar DockPanel.Dock="Bottom" Height="27">
+            <Label Content="{Binding Path=ReadyInfo,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                   Foreground="{Binding Path=ReadyInfoFG,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                   Margin="0,-5,0,0"/>
+        </StatusBar>
+        <DockPanel DockPanel.Dock="Bottom" Height="30">
+            <Button DockPanel.Dock="Right" Margin="3" Width="60" Content="OK" IsDefault="True" IsCancel="True"></Button>
+            <Button DockPanel.Dock="Right" Margin="3" Width="60" Content="Save"></Button>
+            <!--Button DockPanel.Dock="Left" Margin="3" Width="75" Content="Terminate"
+                    Visibility="Collapsed"
+                    IsEnabled="{Binding Path=CorrectSelected,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"></Button-->
+            <Grid/>
+        </DockPanel>
+        <TabControl>
+            <TabItem Header="List">
+                <DataGrid AutoGenerateColumns="False" Name="dgTerm" ItemsSource="{Binding}" 
+                  CanUserAddRows="False" CanUserDeleteRows="True" 
+                  HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" 
+                  VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" 
+                  SelectionMode="Single" HeadersVisibility="Column"
+                  CanUserSortColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Index" Width="50" MinWidth="25"
+                                        Binding="{Binding Path=Index,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
+                                        IsReadOnly="True"/>
+                        <DataGridTextColumn Header="IP" Width="150" MinWidth="50"
+                                        Binding="{Binding Path=IP,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
+                                        IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Port" Width="50" MinWidth="50"
+                                        Binding="{Binding Path=Port,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
+                                        IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Lastest Activated Time" Width="150" MinWidth="50"
+                                        Binding="{Binding Path=ActTimeString,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
+                                        IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Silent Time Span" Width="150" MinWidth="50"
+                                        Binding="{Binding Path=SilTimeString,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
+                                        IsReadOnly="True"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+            <TabItem Header="Raw">
+                <RichTextBox Grid.Row="1" Name="rtxtRaw" IsReadOnly="True" 
+                         VerticalScrollBarVisibility="Auto"  HorizontalScrollBarVisibility="Auto">
+                    <RichTextBox.Resources>
+                        <Style TargetType="{x:Type Paragraph}">
+                            <Setter Property="Margin" Value="0"/>
+                        </Style>
+                    </RichTextBox.Resources>
+                    <RichTextBox.Document>
+                        <FlowDocument Focusable="True" LineHeight="1" Name="fldocRaw">
+                        </FlowDocument>
+                    </RichTextBox.Document>
+                </RichTextBox>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

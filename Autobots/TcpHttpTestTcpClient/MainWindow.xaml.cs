@@ -515,7 +515,7 @@ namespace TcpHttpTestTcpClient
 
         private void PostLog(string msg, SolidColorBrush scb)
 		{
-			lock(_objLock)
+			//lock(_objLock)
 			{
 				Dispatcher.Invoke((ThreadStart)delegate()
 				{

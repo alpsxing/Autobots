@@ -45,9 +45,6 @@
                     <Image Margin="-3" Source="resources/exit.png" Style="{StaticResource ImageEnableDisableStyle}"/>
                 </Button.Content>
             </Button>
-            <Separator/>
-            <Label Content="{Binding Path=ServerInfo,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
-                   Foreground="{Binding Path=ServerInfoFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
         </ToolBar>
         <StatusBar Height="32" DockPanel.Dock="Bottom">
             <!--DockPanel>
@@ -60,160 +57,187 @@
             <ProgressBar Width="200" Height="15" Maximum="100"
                          Value="{Binding Path=StatusPbarValue,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
             <Label Content="{Binding Path=StatusBarInfo,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+            <!--Label Content="{Binding Path=ServerInfo,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
+                   Foreground="{Binding Path=ServerInfoFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/-->
         </StatusBar>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="400" MinWidth="50"/>
-                <ColumnDefinition MinWidth="50"/>
-            </Grid.ColumnDefinitions>
-            <ScrollViewer Grid.Column="0" Margin="0,0,3,0">
-                <DockPanel>
-                    <GroupBox DockPanel.Dock="Top" Header="Stored Messages" Height="102">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="75"/>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                            </Grid.ColumnDefinitions>
-                            <Label Grid.Row="0" Grid.Column="0" Content="Http Server"
+        <TabControl TabStripPlacement="Bottom"
+                    SelectedIndex="{Binding Path=ManagementTabSelected,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}">
+            <TabItem Header="Management">
+                <ScrollViewer Grid.Column="0" Margin="0,0,3,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <DockPanel Grid.Column="0">
+                            <GroupBox DockPanel.Dock="Top" Header="Stored Messages" Height="102">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="90"/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Http Server"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=Msg2HttpFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                    <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
                                  Text="{Binding Path=Msg2Http,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=Msg2HttpFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="0" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshMsg2Http_Button_click"/>
-                            <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryMsg2Http_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="0" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveMsg2Http_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="0" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearMsg2Http_Button_click" IsEnabled="False"/>
-                            <Label Grid.Row="1" Grid.Column="0" Content="JIT Server"
+                                    <Button Grid.Row="0" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshMsg2Http_Button_click"/>
+                                    <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryMsg2Http_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="0" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveMsg2Http_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="0" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearMsg2Http_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="1" Grid.Column="0" Content="JIT Server"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=Msg2JitFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                    <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
                                  Text="{Binding Path=Msg2Jit,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=Msg2JitFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="1" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshMsg2Jit_Button_click"/>
-                            <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryMsg2Jit_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="1" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveMsg2Jit_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="1" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearMsg2Jit_Button_click" IsEnabled="False"/>
-                            <Label Grid.Row="2" Grid.Column="0" Content="Terminal"
+                                    <Button Grid.Row="1" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshMsg2Jit_Button_click"/>
+                                    <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryMsg2Jit_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="1" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveMsg2Jit_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="1" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearMsg2Jit_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="2" Grid.Column="0" Content="Terminal"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=Msg2TerminalFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="2" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                    <TextBox Grid.Row="2" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
                                  Text="{Binding Path=Msg2Terminal,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=Msg2TerminalFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="2" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshMsg2Terminal_Button_click"/>
-                            <Button Grid.Row="2" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryMsg2Terminal_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="2" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveMsg2Terminal_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="2" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearMsg2Terminal_Button_click" IsEnabled="False"/>
-                        </Grid>
-                    </GroupBox>
-                    <GroupBox DockPanel.Dock="Top" Header="Jit Server Failures" Height="76">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="75"/>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                            </Grid.ColumnDefinitions>
-                            <Label Grid.Row="0" Grid.Column="0" Content="Master JIT"
-                               HorizontalAlignment="Right" VerticalAlignment="Center"
-                               Foreground="{Binding Path=MasterJitFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
-                                 Text="{Binding Path=MasterJitFail,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
-                                 Foreground="{Binding Path=MasterJitFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="0" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshMasterJitFail_Button_click"/>
-                            <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryMasterJitFail_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="0" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveMasterJitFail_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="0" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearMasterJitFail_Button_click" IsEnabled="False"/>
-                            <Label Grid.Row="1" Grid.Column="0" Content="Both JIT"
-                               HorizontalAlignment="Right" VerticalAlignment="Center"
-                               Foreground="{Binding Path=BothJitFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
-                                 Text="{Binding Path=BothJitFail,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
-                                 Foreground="{Binding Path=BothJitFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="1" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshBothJitFail_Button_click"/>
-                            <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryBothJitFail_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="1" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveBothJitFail_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="1" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearBothJitFail_Button_click" IsEnabled="False"/>
-                        </Grid>
-                    </GroupBox>
-                    <GroupBox DockPanel.Dock="Top" Header="Http Dispatcher Time" Height="76">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="75"/>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                            </Grid.ColumnDefinitions>
-                            <Label Grid.Row="0" Grid.Column="0" Content="Active"
+                                    <Button Grid.Row="2" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshMsg2Terminal_Button_click"/>
+                                    <Button Grid.Row="2" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryMsg2Terminal_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="2" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveMsg2Terminal_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="2" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearMsg2Terminal_Button_click" IsEnabled="False"/>
+                                </Grid>
+                            </GroupBox>
+                            <GroupBox DockPanel.Dock="Top" Header="Jit Server Failures" Height="132">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="90"/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Master Cont"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center"
+                                           Foreground="{Binding Path=MasterContFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                             Text="{Binding Path=MasterContFail,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
+                                             Foreground="{Binding Path=MasterContFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Button Grid.Row="0" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshMasterContFail_Button_click"/>
+                                    <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryMasterContFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="0" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveMasterContFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="0" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearMasterContFail_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="1" Grid.Column="0" Content="Master Total"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center"
+                                           Foreground="{Binding Path=MasterTotalFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                             Text="{Binding Path=MasterTotalFail,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
+                                             Foreground="{Binding Path=MasterTotalFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Button Grid.Row="1" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshMasterTotalFail_Button_click"/>
+                                    <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryMasterTotaltFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="1" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveMasterTotalFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="1" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearMasterTotalFail_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="2" Grid.Column="0" Content="Both Cont"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center"
+                                           Foreground="{Binding Path=BothContFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Grid.Row="2" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                             Text="{Binding Path=BothContFail,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
+                                             Foreground="{Binding Path=BothContFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Button Grid.Row="2" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshBothContFail_Button_click"/>
+                                    <Button Grid.Row="2" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryBothContFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="2" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveBothContFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="2" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearBothContFail_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="3" Grid.Column="0" Content="Both Total"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center"
+                                           Foreground="{Binding Path=BothTotalFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Grid.Row="3" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                             Text="{Binding Path=BothTotalFail,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
+                                             Foreground="{Binding Path=BothTotalFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Button Grid.Row="3" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshBothTotalFail_Button_click"/>
+                                    <Button Grid.Row="3" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryBothTotalFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="3" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveBothTotalFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="3" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearBothTotalFail_Button_click" IsEnabled="False"/>
+                                </Grid>
+                            </GroupBox>
+                            <GroupBox DockPanel.Dock="Top" Header="Http Dispatcher Time" Height="76">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="90"/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Active"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=HttpDispatcherActiveTimeFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" IsReadOnly="True" Margin="0,3,0,3"
+                                    <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" IsReadOnly="True" Margin="0,3,0,3"
                                  Text="{Binding Path=HttpDispatcherActiveTime,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=HttpDispatcherActiveTimeFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Refresh" Click="RefreshHttpDispatcherActiveTime_Button_click" IsEnabled="False"/>
-                            <Label Grid.Row="1" Grid.Column="0" Content="Sleep"
+                                    <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Refresh" Click="RefreshHttpDispatcherActiveTime_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="1" Grid.Column="0" Content="Sleep"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=HttpDispatcherSleepTimeFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" IsReadOnly="True" Margin="0,3,0,3"
+                                    <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" IsReadOnly="True" Margin="0,3,0,3"
                                  Text="{Binding Path=HttpDispatcherSleepTime,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=HttpDispatcherSleepTimeFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Refresh" Click="RefreshHttpDispatcherSleepTime_Button_click" IsEnabled="False"/>
-                        </Grid>
-                    </GroupBox>
-                    <GroupBox DockPanel.Dock="Top" Header="Http Processes" Height="132">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="75"/>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                            </Grid.ColumnDefinitions>
-                            <Label Grid.Row="0" Grid.Column="0" Content="Min"
+                                    <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Refresh" Click="RefreshHttpDispatcherSleepTime_Button_click" IsEnabled="False"/>
+                                </Grid>
+                            </GroupBox>
+                            <GroupBox DockPanel.Dock="Top" Header="Http Processes" Height="132">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="90"/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Min"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=HttpMinFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                    <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
                                  Text="{Binding Path=HttpMin,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=HttpMinFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="0" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshHttpMinCount_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Set" Click="SetHttpMinCount_Button_click" IsEnabled="False"/>
-                            <Label Grid.Row="1" Grid.Column="0" Content="Max"
+                                    <Button Grid.Row="0" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshHttpMinCount_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Set" Click="SetHttpMinCount_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="1" Grid.Column="0" Content="Max"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=HttpMaxFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                    <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
                                  Text="{Binding Path=HttpMax,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=HttpMaxFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="1" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshHttpMaxCount_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Set" Click="SetHttpMaxCount_Button_click" IsEnabled="False"/>
-                            <!--Label Grid.Row="2" Grid.Column="0" Content="Warning"
+                                    <Button Grid.Row="1" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshHttpMaxCount_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Set" Click="SetHttpMaxCount_Button_click" IsEnabled="False"/>
+                                    <!--Label Grid.Row="2" Grid.Column="0" Content="Warning"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=HttpWarningFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
                             <TextBox Grid.Row="2" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
@@ -221,259 +245,301 @@
                                  Foreground="{Binding Path=HttpWarningFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
                             <Button Grid.Row="2" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshHttpWarningCount_Button_click" IsEnabled="False"/>
                             <Button Grid.Row="2" Grid.Column="3" Margin="2,3,2,3" Content="Set" Click="SetHttpWarningCount_Button_click" IsEnabled="False"/-->
-                            <Label Grid.Row="2" Grid.Column="0" Content="Idle"
+                                    <Label Grid.Row="2" Grid.Column="0" Content="Idle"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=HttpIdleFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="2" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                    <TextBox Grid.Row="2" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
                                  Text="{Binding Path=HttpIdle,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=HttpIdleFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="2" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshHttpIdle_Button_click" IsEnabled="False"/>
-                            <Label Grid.Row="3" Grid.Column="0" Content="Available"
+                                    <Button Grid.Row="2" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshHttpIdle_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="3" Grid.Column="0" Content="Available"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=HttpAvailableFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="3" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                    <TextBox Grid.Row="3" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
                                  Text="{Binding Path=HttpAvailable,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=HttpAvailableFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="3" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshHttpAvailable_Button_click" IsEnabled="False"/>
-                        </Grid>
-                    </GroupBox>
-                    <GroupBox DockPanel.Dock="Top" Header="Terminal/Management Terminal Count" Height="76">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="75"/>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                            </Grid.ColumnDefinitions>
-                            <Label Grid.Row="0" Grid.Column="0" Content="Man-Term"
+                                    <Button Grid.Row="3" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshHttpAvailable_Button_click" IsEnabled="False"/>
+                                </Grid>
+                            </GroupBox>
+                            <Grid/>
+                        </DockPanel>
+                        <DockPanel Grid.Column="1">
+                            <GroupBox DockPanel.Dock="Top" Header="Terminal/Management Terminal Count" Height="76">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="90"/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Man-Term"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=ManTermCountFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                    <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
                                  Text="{Binding Path=ManTermCount,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=ManTermCountFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="0" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshManTermCount_Button_click"/>
-                            <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryManTermCount_Button_click"/>
-                            <Button Grid.Row="0" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveManTermCount_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="0" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearManTermCount_Button_click" IsEnabled="False"/>
-                            <Label Grid.Row="1" Grid.Column="0" Content="Term"
+                                    <Button Grid.Row="0" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshManTermCount_Button_click"/>
+                                    <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryManTermCount_Button_click"/>
+                                    <Button Grid.Row="0" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveManTermCount_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="0" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearManTermCount_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="1" Grid.Column="0" Content="Term"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=TermCountFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                    <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
                                  Text="{Binding Path=TermCount,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=TermCountFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="1" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshTermCount_Button_click"/>
-                            <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryTermCount_Button_click"/>
-                            <Button Grid.Row="1" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveTermCount_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="1" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearTermCount_Button_click" IsEnabled="False"/>
-                        </Grid>
-                    </GroupBox>
-                    <GroupBox DockPanel.Dock="Top" Header="Accept Terminal/Management Terminal Failures" Height="132">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="75"/>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="55"/>
-                            </Grid.ColumnDefinitions>
-                            <Label Grid.Row="0" Grid.Column="0" Content="Term Cont"
+                                    <Button Grid.Row="1" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshTermCount_Button_click"/>
+                                    <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryTermCount_Button_click"/>
+                                    <Button Grid.Row="1" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveTermCount_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="1" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearTermCount_Button_click" IsEnabled="False"/>
+                                </Grid>
+                            </GroupBox>
+                            <GroupBox DockPanel.Dock="Top" Header="Accept Terminal/Management Terminal Failures" Height="132">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="90"/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Term Cont"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=AccTermContFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                    <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
                                  Text="{Binding Path=AccTermContFail,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=AccTermContFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="0" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshAccTermContFail_Button_click"/>
-                            <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryAccTermContFail_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="0" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveAccTermContFail_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="0" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearAccTermContFail_Button_click" IsEnabled="False"/>
-                            <Label Grid.Row="1" Grid.Column="0" Content="Term Total"
+                                    <Button Grid.Row="0" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshAccTermContFail_Button_click"/>
+                                    <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryAccTermContFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="0" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveAccTermContFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="0" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearAccTermContFail_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="1" Grid.Column="0" Content="Term Total"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=AccTermTotalFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                    <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
                                  Text="{Binding Path=AccTermTotalFail,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=AccTermTotalFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="1" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshAccTermTotalFail_Button_click"/>
-                            <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryAccTermTotalFail_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="1" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveAccTermTotalFail_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="1" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearAccTermTotalFail_Button_click" IsEnabled="False"/>
-                            <Label Grid.Row="2" Grid.Column="0" Content="M-T Cont"
+                                    <Button Grid.Row="1" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshAccTermTotalFail_Button_click"/>
+                                    <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryAccTermTotalFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="1" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveAccTermTotalFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="1" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearAccTermTotalFail_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="2" Grid.Column="0" Content="M-T Cont"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=AccManTermTotalFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="2" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                    <TextBox Grid.Row="2" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
                                  Text="{Binding Path=AccManTermTotalFail,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=AccTermTotalFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="2" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshAccManTermContFail_Button_click"/>
-                            <Button Grid.Row="2" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryAccManTermContFail_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="2" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveAccManTermContFail_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="2" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearAccManTermContFail_Button_click" IsEnabled="False"/>
-                            <Label Grid.Row="3" Grid.Column="0" Content="M-T Total"
+                                    <Button Grid.Row="2" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshAccManTermContFail_Button_click"/>
+                                    <Button Grid.Row="2" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryAccManTermContFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="2" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveAccManTermContFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="2" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearAccManTermContFail_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="3" Grid.Column="0" Content="M-T Total"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                Foreground="{Binding Path=AccManTermTotalFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="3" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                    <TextBox Grid.Row="3" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
                                  Text="{Binding Path=AccManTermTotalFail,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{Binding Path=AccTermTotalFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                            <Button Grid.Row="3" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshAccManTermTotalFail_Button_click"/>
-                            <Button Grid.Row="3" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryAccManTermTotalFail_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="3" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveAccManTermTotalFail_Button_click" IsEnabled="False"/>
-                            <Button Grid.Row="3" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearAccManTermTotalFail_Button_click" IsEnabled="False"/>
-                        </Grid>
-                    </GroupBox>
-                    <Grid DockPanel.Dock="Top" Height="216">
-                        <Grid.RowDefinitions>
-                            <RowDefinition/>
-                            <RowDefinition/>
-                            <RowDefinition/>
-                            <RowDefinition/>
-                            <RowDefinition/>
-                            <RowDefinition/>
-                            <RowDefinition/>
-                            <RowDefinition/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="85"/>
-                            <ColumnDefinition/>
-                            <ColumnDefinition Width="55"/>
-                            <ColumnDefinition Width="55"/>
-                            <ColumnDefinition Width="55"/>
-                            <ColumnDefinition Width="55"/>
-                        </Grid.ColumnDefinitions>
-                        <Label Grid.Row="0" Grid.Column="0" Content="Use Master"
+                                    <Button Grid.Row="3" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshAccManTermTotalFail_Button_click"/>
+                                    <Button Grid.Row="3" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryAccManTermTotalFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="3" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveAccManTermTotalFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="3" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearAccManTermTotalFail_Button_click" IsEnabled="False"/>
+                                </Grid>
+                            </GroupBox>
+                            <GroupBox DockPanel.Dock="Top" Header="Terminal/Management Terminal Total Failures" Height="76">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="90"/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Man-Term"
+                               HorizontalAlignment="Right" VerticalAlignment="Center"
+                               Foreground="{Binding Path=ManTermFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                 Text="{Binding Path=ManTermFail,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
+                                 Foreground="{Binding Path=ManTermFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Button Grid.Row="0" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshManTermFail_Button_click"/>
+                                    <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryManTermFail_Button_click"/>
+                                    <Button Grid.Row="0" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveManTermFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="0" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearManTermFail_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="1" Grid.Column="0" Content="Term"
+                               HorizontalAlignment="Right" VerticalAlignment="Center"
+                               Foreground="{Binding Path=TermFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True" Margin="0,3,0,3"
+                                 Text="{Binding Path=TermFail,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
+                                 Foreground="{Binding Path=TermFailFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Button Grid.Row="1" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshTermFail_Button_click"/>
+                                    <Button Grid.Row="1" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryTermFail_Button_click"/>
+                                    <Button Grid.Row="1" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveTermFail_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="1" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearTermFail_Button_click" IsEnabled="False"/>
+                                </Grid>
+                            </GroupBox>
+                            <GroupBox DockPanel.Dock="Top" Header="Others" Height="182">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="85"/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Use Master"
                            HorizontalAlignment="Right" VerticalAlignment="Center"
                            Foreground="{Binding Path=UseMasterFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True"
+                                    <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True"
                              Text="{Binding Path=UseMaster,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                              TextAlignment="Left" Margin="0,3,0,3"
                              Foreground="{Binding Path=UseMasterFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                        <Button Grid.Row="0" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshUseMaster_Button_click"/>
-                        <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Set" Click="SetUseMaster_Button_click" IsEnabled="False"/>
-                        <Label Grid.Row="1" Grid.Column="0" Content="Ori Disp Log"
+                                    <Button Grid.Row="0" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshUseMaster_Button_click"/>
+                                    <Button Grid.Row="0" Grid.Column="3" Margin="2,3,2,3" Content="Set" Click="SetUseMaster_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="1" Grid.Column="0" Content="Ori Disp Log"
                            HorizontalAlignment="Right" VerticalAlignment="Center"
                            Foreground="{Binding Path=OriDisplayLogFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True"
+                                    <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True"
                              Text="{Binding Path=OriDisplayLog,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                              TextAlignment="Left" Margin="0,3,0,3"
                              Foreground="{Binding Path=OriDisplayLogFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                        <Button Grid.Row="1" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshOriDisplayLog_Button_click"/>
-                        <Label Grid.Row="2" Grid.Column="0" Content="Ori Log Lvl"
+                                    <Button Grid.Row="1" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshOriDisplayLog_Button_click"/>
+                                    <Label Grid.Row="2" Grid.Column="0" Content="Ori Log Lvl"
                            HorizontalAlignment="Right" VerticalAlignment="Center"
                            Foreground="{Binding Path=OriLogLevelFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" IsReadOnly="True"
+                                    <TextBox Grid.Row="2" Grid.Column="1" IsReadOnly="True"
                              Text="{Binding Path=OriLogLevel,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                              TextAlignment="Left" Margin="0,3,0,3"
                              Foreground="{Binding Path=OriLogLevelFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                        <Button Grid.Row="2" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshOriLogLevel_Button_click"/>
-                        <Label Grid.Row="3" Grid.Column="0" Content="Display Log"
+                                    <Button Grid.Row="2" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshOriLogLevel_Button_click"/>
+                                    <Label Grid.Row="3" Grid.Column="0" Content="Display Log"
                            HorizontalAlignment="Right" VerticalAlignment="Center"
                            Foreground="{Binding Path=DisplayLogFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" IsReadOnly="True"
+                                    <TextBox Grid.Row="3" Grid.Column="1" IsReadOnly="True"
                              Text="{Binding Path=DisplayLog,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                              TextAlignment="Left" Margin="0,3,0,3"
                              Foreground="{Binding Path=DisplayLogFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                        <Button Grid.Row="3" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshDisplayLog_Button_click"/>
-                        <Button Grid.Row="3" Grid.Column="3" Margin="2,3,2,3" Content="Set" Click="SetDisplayLog_Button_click" IsEnabled="False"/>
-                        <Label Grid.Row="4" Grid.Column="0" Content="Log Level"
+                                    <Button Grid.Row="3" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshDisplayLog_Button_click"/>
+                                    <Button Grid.Row="3" Grid.Column="3" Margin="2,3,2,3" Content="Set" Click="SetDisplayLog_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="4" Grid.Column="0" Content="Log Level"
                            HorizontalAlignment="Right" VerticalAlignment="Center"
                            Foreground="{Binding Path=LogLevelFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                        <TextBox Grid.Row="4" Grid.Column="1" IsReadOnly="True"
+                                    <TextBox Grid.Row="4" Grid.Column="1" IsReadOnly="True"
                              Text="{Binding Path=LogLevel,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                              TextAlignment="Left" Margin="0,3,0,3"
                              Foreground="{Binding Path=LogLevelFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                        <Button Grid.Row="4" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshLogLevel_Button_click"/>
-                        <Button Grid.Row="4" Grid.Column="3" Margin="2,3,2,3" Content="Set" Click="SetLogLevel_Button_click" IsEnabled="False"/>
-                        <Label Grid.Row="5" Grid.Column="0" Content="Log Count"
+                                    <Button Grid.Row="4" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshLogLevel_Button_click"/>
+                                    <Button Grid.Row="4" Grid.Column="3" Margin="2,3,2,3" Content="Set" Click="SetLogLevel_Button_click" IsEnabled="False"/>
+                                    <Label Grid.Row="5" Grid.Column="0" Content="Log Count"
                            HorizontalAlignment="Right" VerticalAlignment="Center"
                            Foreground="{Binding Path=LogCountFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                        <TextBox Grid.Row="5" Grid.Column="1" IsReadOnly="True"
+                                    <TextBox Grid.Row="5" Grid.Column="1" IsReadOnly="True"
                              Text="{Binding Path=LogCount,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                              TextAlignment="Left" Margin="0,3,0,3"
                              Foreground="{Binding Path=LogCountFG,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                        <Button Grid.Row="5" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshLogCount_Button_click"/>
-                        <Button Grid.Row="5" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryLogCount_Button_click" IsEnabled="False"/>
-                        <Button Grid.Row="5" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveLogCount_Button_click" IsEnabled="False"/>
-                        <Button Grid.Row="5" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearLogCount_Button_click" IsEnabled="False"/>
-                        <Grid/>
+                                    <Button Grid.Row="5" Grid.Column="2" Margin="2,3,2,3" Content="Refresh" Click="RefreshLogCount_Button_click"/>
+                                    <Button Grid.Row="5" Grid.Column="3" Margin="2,3,2,3" Content="Query" Click="QueryLogCount_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="5" Grid.Column="4" Margin="2,3,2,3" Content="Save" Click="SaveLogCount_Button_click" IsEnabled="False"/>
+                                    <Button Grid.Row="5" Grid.Column="5" Margin="2,3,2,3" Content="Clear" Click="ClearLogCount_Button_click" IsEnabled="False"/>
+                                    <Grid/>
+                                </Grid>
+                            </GroupBox>
+                            <Grid/>
+                        </DockPanel>
                     </Grid>
-                    <Grid/>
-                </DockPanel>
-            </ScrollViewer>
-            <GridSplitter Grid.Column="0" HorizontalAlignment="Right" Width="3"/>
-            <DockPanel Grid.Column="1">
-                <DockPanel DockPanel.Dock="Bottom" Height="30">
-                    <CheckBox DockPanel.Dock="Left" HorizontalAlignment="Center" VerticalAlignment="Center"
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Header="Log">
+                <DockPanel Grid.Column="1">
+                    <DockPanel DockPanel.Dock="Bottom" Height="30">
+                        <CheckBox DockPanel.Dock="Left" HorizontalAlignment="Center" VerticalAlignment="Center"
                               Content="Auto Scrolling" IsThreeState="False"
                               IsChecked="{Binding Path=LogAutoScrollingEnabled,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
-                    <Button DockPanel.Dock="Right" Margin="3" Width="60" Content="Clear" Click="Clear_Button_Click"></Button>
-                    <Button DockPanel.Dock="Right" Margin="3" Width="60" Content="Save"></Button>
-                    <ComboBox DockPanel.Dock="Right" Width="75" Margin="3"
+                        <Button DockPanel.Dock="Right" Margin="3" Width="60" Content="Clear" Click="Clear_Button_Click"></Button>
+                        <Button DockPanel.Dock="Right" Margin="3" Width="60" Content="Save"></Button>
+                        <ComboBox DockPanel.Dock="Right" Width="90" Margin="3"
                               SelectedIndex="{Binding Path=MaxLogCountSelectedIndex,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}">
-                        <ComboBoxItem Content="0"/>
-                        <ComboBoxItem Content="100"/>
-                        <ComboBoxItem Content="200"/>
-                        <ComboBoxItem Content="500"/>
-                        <ComboBoxItem Content="1000"/>
-                    </ComboBox>
-                    <Label Content="Max Log" DockPanel.Dock="Right"
+                            <ComboBoxItem Content="0"/>
+                            <ComboBoxItem Content="100"/>
+                            <ComboBoxItem Content="200"/>
+                            <ComboBoxItem Content="500"/>
+                            <ComboBoxItem Content="1000"/>
+                        </ComboBox>
+                        <Label Content="Max Log" DockPanel.Dock="Right"
                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    <Grid/>
-                    <ComboBox DockPanel.Dock="Right" Width="75" Margin="3"
+                        <Grid/>
+                        <ComboBox DockPanel.Dock="Right" Width="90" Margin="3"
                               SelectedIndex="{Binding Path=SaveLogCountSelectedIndex,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}">
-                        <ComboBoxItem Content="100"/>
-                        <ComboBoxItem Content="500"/>
-                        <ComboBoxItem Content="1000"/>
-                        <ComboBoxItem Content="5000"/>
-                        <ComboBoxItem Content="10000"/>
-                        <ComboBoxItem Content="None"/>
-                    </ComboBox>
-                    <Label Content="Save Count" DockPanel.Dock="Right"
+                            <ComboBoxItem Content="100"/>
+                            <ComboBoxItem Content="500"/>
+                            <ComboBoxItem Content="1000"/>
+                            <ComboBoxItem Content="5000"/>
+                            <ComboBoxItem Content="10000"/>
+                            <ComboBoxItem Content="None"/>
+                        </ComboBox>
+                        <Label Content="Save Count" DockPanel.Dock="Right"
                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    <Grid/>
-                </DockPanel>
-                <DataGrid AutoGenerateColumns="False" Name="dgLog" ItemsSource="{Binding}" 
+                        <Grid/>
+                    </DockPanel>
+                    <DataGrid AutoGenerateColumns="False" Name="dgLog" ItemsSource="{Binding}" 
                           CanUserAddRows="False" CanUserDeleteRows="True" 
                           HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" 
                           VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" 
                           SelectionMode="Single" HeadersVisibility="Column"
                           CanUserSortColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Index" Width="50" MinWidth="25"
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Index" Width="50" MinWidth="25"
                                         Binding="{Binding Path=IndexString,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
                                         IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Time Stamp" Width="150" MinWidth="100"
+                            <DataGridTextColumn Header="Time Stamp" Width="150" MinWidth="100"
                                         Binding="{Binding Path=TimeStampString,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
                                         IsReadOnly="True"/>
-                        <DataGridTemplateColumn MinWidth="30" MaxWidth="30">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Image Height="13" Source="{Binding Path=MsgFlowImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn MinWidth="30" MaxWidth="30">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Image Height="13" Source="{Binding Path=StatusImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="Message" Width="500" MinWidth="100"
+                            <DataGridTemplateColumn MinWidth="30" MaxWidth="30">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Image Height="13" Source="{Binding Path=MsgFlowImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn MinWidth="30" MaxWidth="30">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Image Height="13" Source="{Binding Path=StatusImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Message" Width="500" MinWidth="100"
                                         Binding="{Binding Path=Message,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
                                         IsReadOnly="True"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </DockPanel>
-        </Grid>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+        </TabControl>
     </DockPanel>
 </Window>

@@ -53,7 +53,7 @@ namespace TcpHttpManagement
         private const int DEF_AUTO_INTERVAL = 30;
         private const string DEF_SERVER_IP = "127.0.0.1";
         private const string DEF_SERVER_PORT = "5081";
-        private const double DEF_HTTP_DISPATCHER_SLEEP_TIME = 2.0;  // minute
+        private const double DEF_HTTP_DISPATCHER_SLEEP_TIME = 10.0;  // minute
 
         private const int MT_TCP_RECEIVE_TIMEOUT = 30000;
 
@@ -66,9 +66,10 @@ namespace TcpHttpManagement
         private const string MT_QRY_ALL_STATES = "010000";
         private const string MT_RST_ALL_STATES = "010001";
         private const string MT_QRY_ALL_2HTTP = "010002";
+        private const string MT_QRY_ALL_2HTTP_COUNT = "010029";
+        private const string MT_QRY_ALL_2HTTP_CLR = "010005";
         private const string MT_QRY_ALL_2JIT = "010003";
         private const string MT_QRY_ALL_2TERM = "010004";
-        private const string MT_QRY_ALL_2HTTP_CLR = "010005";
         private const string MT_QRY_ALL_2JIT_CLR = "010006";
         private const string MT_QRY_ALL_2TERM_CLR = "010007";
         private const string MT_CLR_ALL_2HTTP = "010008";
@@ -78,10 +79,6 @@ namespace TcpHttpManagement
         private const string MT_SET_DISPLAY_LOG_STATE = "010012";
         private const string MT_QRY_USE_MASTER_STATE = "010013";
         private const string MT_SET_USE_MASTER_STATE = "010014";
-        private const string MT_QRY_MASTER_JIT_FAIL = "010015";
-        private const string MT_CLR_MASTER_JIT_FAIL = "010016";
-        private const string MT_QRY_BOTH_JIT_FAIL = "010017";
-        private const string MT_CLR_BOTH_JIT_FAIL = "010018";
         private const string MT_QRY_ACC_TERM_CONT_FAIL = "010019";
         private const string MT_CLR_ACC_TERM_CONT_FAIL = "010020";
         private const string MT_QRY_ACC_TERM_TOTAL_FAIL = "010021";
@@ -92,7 +89,6 @@ namespace TcpHttpManagement
         private const string MT_CLR_ACC_MT_TOTAL_FAIL = "010026";
         private const string MT_QRY_LOG_LEVEL = "010027";
         private const string MT_SET_LOG_LEVEL = "010028";
-        private const string MT_QRY_ALL_2HTTP_COUNT = "010029";
         private const string MT_QRY_ALL_2JIT_COUNT = "010030";
         private const string MT_QRY_ALL_2TERM_COUNT = "010031";
         private const string MT_QRY_ALL_LOG = "010032";
@@ -105,10 +101,29 @@ namespace TcpHttpManagement
         private const string MT_QRY_ORI_LOG_LEVEL = "000039";
         private const string MT_QRY_ALL_TERM = "010040";
         private const string MT_QRY_ALL_TERM_COUNT = "010041";
-        //private const string MT_QRY_ALL_MT_TAB_COUNT="010042";
-        //private const string MT_QRY_ALL_TERM_TAB_COUNT = "010043";
-        private const string MT_QRY_HTTP_FAIL = "010042";
-        private const string MT_CLR_HTTP_FAIL = "010043";
+        private const string MT_QRY_NORMAL_HTTP_PROC_COUNT = "010042";
+        private const string MT_QRY_IDLE_HTTP_PROC_COUNT = "010043";
+        private const string MT_QRY_HTTP_PROC_MAX_COUNT = "010044";
+        private const string MT_QRY_HTTP_PROC_WARN_COUNT = "010045";
+        private const string MT_SET_HTTP_PROC_MAX_COUNT = "010046";
+        private const string MT_SET_HTTP_PROC_WARN_COUNT = "010047";
+        private const string MT_SAV_ALL_2JIT = "010048";
+        private const string MT_QRY_SAV_ALL_2JIT = "010049";
+        private const string MT_QRY_SAV_ALL_2JIT_COUNT = "010050";
+        private const string MT_RES_ALL_2JIT = "010051";
+        private const string MT_SAV_ALL_2TERM = "010048";
+        private const string MT_QRY_SAV_ALL_2TERM = "010049";
+        private const string MT_QRY_SAV_ALL_2TERM_COUNT = "010050";
+        private const string MT_RES_ALL_2TERM = "010051";
+        private const string MT_QRY_HTTP_DISPATCHER_TIME = "010052";
+        private const string MT_QRY_MASTER_JIT_CONT_FAIL = "010054";
+        private const string MT_CLR_MASTER_JIT_CONT_FAIL = "010055";
+        private const string MT_QRY_MASTER_JIT_TOTAL_FAIL = "010056";
+        private const string MT_CLR_MASTER_JIT_TOTAL_FAIL = "010057";
+        private const string MT_QRY_BOTH_JIT_CONT_FAIL = "010058";
+        private const string MT_CLR_BOTH_JIT_CONT_FAIL = "010059";
+        private const string MT_QRY_BOTH_JIT_TOTAL_FAIL = "010060";
+        private const string MT_CLR_BOTH_JIT_TOTAL_FAIL = "010061";
 
         //
         // Messages ok to management terminal
@@ -129,10 +144,6 @@ namespace TcpHttpManagement
         private const string MT_SET_DISPLAY_LOG_STATE_OK = "020012";
         private const string MT_QRY_USE_MASTER_STATE_OK = "020013";
         private const string MT_SET_USE_MASTER_STATE_OK = "020014";
-        private const string MT_QRY_MASTER_JIT_FAIL_OK = "020015";
-        private const string MT_CLR_MASTER_JIT_FAIL_OK = "020016";
-        private const string MT_QRY_BOTH_JIT_FAIL_OK = "020017";
-        private const string MT_CLR_BOTH_JIT_FAIL_OK = "020018";
         private const string MT_QRY_ACC_TERM_CONT_FAIL_OK = "020019";
         private const string MT_CLR_ACC_TERM_CONT_FAIL_OK = "020020";
         private const string MT_QRY_ACC_TERM_TOTAL_FAIL_OK = "020021";
@@ -156,10 +167,29 @@ namespace TcpHttpManagement
         private const string MT_QRY_ORI_LOG_LEVEL_OK = "020039";
         private const string MT_QRY_ALL_TERM_OK = "020040";
         private const string MT_QRY_ALL_TERM_COUNT_OK = "020041";
-        //private const string MT_QRY_ALL_MT_TAB_COUNT_OK = "020042";
-        //private const string MT_QRY_ALL_TERM_TAB_COUNT_OK = "020043";
-        private const string MT_QRY_HTTP_FAIL_OK = "020042";
-        private const string MT_CLR_HTTP_FAIL_OK = "020043";
+        private const string MT_QRY_NORMAL_HTTP_PROC_COUNT_OK = "020042";
+        private const string MT_QRY_IDLE_HTTP_PROC_COUNT_OK = "020043";
+        private const string MT_QRY_HTTP_PROC_MAX_COUNT_OK = "020044";
+        private const string MT_QRY_HTTP_PROC_WARN_COUNT_OK = "020045";
+        private const string MT_SET_HTTP_PROC_MAX_COUNT_OK = "020046";
+        private const string MT_SET_HTTP_PROC_WARN_COUNT_OK = "020047";
+        private const string MT_SAV_ALL_2JIT_OK = "020048";
+        private const string MT_QRY_SAV_ALL_2JIT_OK = "020049";
+        private const string MT_QRY_SAV_ALL_2JIT_COUNT_OK = "020050";
+        private const string MT_RES_ALL_2JIT_OK = "020051";
+        private const string MT_SAV_ALL_2TERM_OK = "020048";
+        private const string MT_QRY_SAV_ALL_2TERM_OK = "020049";
+        private const string MT_QRY_SAV_ALL_2TERM_COUNT_OK = "020050";
+        private const string MT_RES_ALL_2TERM_OK = "020051";
+        private const string MT_QRY_HTTP_DISPATCHER_TIME_OK = "020052";
+        private const string MT_QRY_MASTER_JIT_CONT_FAIL_OK = "020054";
+        private const string MT_CLR_MASTER_JIT_CONT_FAIL_OK = "020055";
+        private const string MT_QRY_MASTER_JIT_TOTAL_FAIL_OK = "020056";
+        private const string MT_CLR_MASTER_JIT_TOTAL_FAIL_OK = "020057";
+        private const string MT_QRY_BOTH_JIT_CONT_FAIL_OK = "020058";
+        private const string MT_CLR_BOTH_JIT_CONT_FAIL_OK = "020059";
+        private const string MT_QRY_BOTH_JIT_TOTAL_FAIL_OK = "020060";
+        private const string MT_CLR_BOTH_JIT_TOTAL_FAIL_OK = "020061";
 
         //
         // Messages error to management terminal
@@ -180,10 +210,6 @@ namespace TcpHttpManagement
         private const string MT_SET_DISPLAY_LOG_STATE_ERR = "030012";
         private const string MT_QRY_USE_MASTER_STATE_ERR = "030013";
         private const string MT_SET_USE_MASTER_STATE_ERR = "030014";
-        private const string MT_QRY_MASTER_JIT_FAIL_ERR = "030015";
-        private const string MT_CLR_MASTER_JIT_FAIL_ERR = "030016";
-        private const string MT_QRY_BOTH_JIT_FAIL_ERR = "030017";
-        private const string MT_CLR_BOTH_JIT_FAIL_ERR = "030018";
         private const string MT_QRY_ACC_TERM_CONT_FAIL_ERR = "030019";
         private const string MT_CLR_ACC_TERM_CONT_FAIL_ERR = "030020";
         private const string MT_QRY_ACC_TERM_TOTAL_FAIL_ERR = "030021";
@@ -207,10 +233,29 @@ namespace TcpHttpManagement
         private const string MT_QRY_ORI_LOG_LEVEL_ERR = "030039";
         private const string MT_QRY_ALL_TERM_ERR = "030040";
         private const string MT_QRY_ALL_TERM_COUNT_ERR = "030041";
-        //private const string MT_QRY_ALL_MT_TAB_COUNT_ERR = "030042";
-        //private const string MT_QRY_ALL_TERM_TAB_COUNT_ERR = "030043";
-        private const string MT_QRY_HTTP_FAIL_ERR = "030042";
-        private const string MT_CLR_HTTP_FAIL_ERR = "030043";
+        private const string MT_QRY_NORMAL_HTTP_PROC_COUNT_ERR = "0320042";
+        private const string MT_QRY_IDLE_HTTP_PROC_COUNT_ERR = "030043";
+        private const string MT_QRY_HTTP_PROC_MAX_COUNT_ERR = "030044";
+        private const string MT_QRY_HTTP_PROC_WARN_COUNT_ERR = "030045";
+        private const string MT_SET_HTTP_PROC_MAX_COUNT_ERR = "030046";
+        private const string MT_SET_HTTP_PROC_WARN_COUNT_ERR = "030047";
+        private const string MT_SAV_ALL_2JIT_ERR = "030048";
+        private const string MT_QRY_SAV_ALL_2JIT_ERR = "030049";
+        private const string MT_QRY_SAV_ALL_2JIT_COUNT_ERR = "030050";
+        private const string MT_RES_ALL_2JIT_ERR = "030051";
+        private const string MT_SAV_ALL_2TERM_ERR = "030048";
+        private const string MT_QRY_SAV_ALL_2TERM_ERR = "030049";
+        private const string MT_QRY_SAV_ALL_2TERM_COUNT_ERR = "030050";
+        private const string MT_RES_ALL_2TERM_ERR = "030051";
+        private const string MT_QRY_HTTP_DISPATCHER_TIME_ERR = "030052";
+        private const string MT_QRY_MASTER_JIT_CONT_FAIL_ERR = "030054";
+        private const string MT_CLR_MASTER_JIT_CONT_FAIL_ERR = "030055";
+        private const string MT_QRY_MASTER_JIT_TOTAL_FAIL_ERR = "030056";
+        private const string MT_CLR_MASTER_JIT_TOTAL_FAIL_ERR = "030057";
+        private const string MT_QRY_BOTH_JIT_CONT_FAIL_ERR = "030058";
+        private const string MT_CLR_BOTH_JIT_CONT_FAIL_ERR = "030059";
+        private const string MT_QRY_BOTH_JIT_TOTAL_FAIL_ERR = "030060";
+        private const string MT_CLR_BOTH_JIT_TOTAL_FAIL_ERR = "030061";
 
         #endregion
 
@@ -257,6 +302,20 @@ namespace TcpHttpManagement
         #endregion
 
         #region Properties
+
+        private int _managementTabSelected = 0;
+        public int ManagementTabSelected
+        {
+            get
+            {
+                return _managementTabSelected;
+            }
+            set
+            {
+                _managementTabSelected = value;
+                NotifyPropertyChanged("ManagementTabSelected");
+            }
+        }
 
         private ObservableCollection<LogItem> _logOc = new ObservableCollection<LogItem>();
         private ObservableCollection<LogItem> _logDispOc = new ObservableCollection<LogItem>();
@@ -521,6 +580,10 @@ namespace TcpHttpManagement
                 _inRun = value;
                 NotifyPropertyChanged("InRun");
                 NotifyPropertyChanged("NotInRun");
+                if (_inRun == true)
+                    StatusBarInfo = "Server - " + ServerIP + ":" + ServerPort + " - every " + AutoInterval.ToString() + " s";
+                else
+                    StatusBarInfo = "Ready";
             }
         }
 
@@ -930,73 +993,249 @@ namespace TcpHttpManagement
             }
         }
 
-        private string _masterJitFail = "";
-        public string MasterJitFail
+        private string _masterContFail = "";
+        public string MasterContFail
         {
             get
             {
-                return _masterJitFail;
+                return _masterContFail;
             }
             set
             {
-                _masterJitFail = value;
+                _masterContFail = value;
                 int count = 0;
-                if (int.TryParse(_masterJitFail, out count) == false)
-                    MasterJitFailFG = Brushes.Red;
+                if (int.TryParse(_masterContFail, out count) == false)
+                    MasterContFailFG = Brushes.Red;
                 else if (count != 0)
-                    MasterJitFailFG = Brushes.Red;
+                    MasterContFailFG = Brushes.Red;
                 else
-                    MasterJitFailFG = Brushes.Black;
-                NotifyPropertyChanged("MasterJitFail");
+                    MasterContFailFG = Brushes.Black;
+                NotifyPropertyChanged("MasterContFail");
             }
         }
 
-        private SolidColorBrush _masterJitFailFG = Brushes.Red;
-        public SolidColorBrush MasterJitFailFG
+        private SolidColorBrush _masterContFailFG = Brushes.Red;
+        public SolidColorBrush MasterContFailFG
         {
             get
             {
-                return _masterJitFailFG;
+                return _masterContFailFG;
             }
             set
             {
-                _masterJitFailFG = value;
-                NotifyPropertyChanged("MasterJitFailFG");
+                _masterContFailFG = value;
+                NotifyPropertyChanged("MasterContFailFG");
             }
         }
 
-        private string _bothJitFail = "";
-        public string BothJitFail
+        private string _masterTotalFail = "";
+        public string MasterTotalFail
         {
             get
             {
-                return _bothJitFail;
+                return _masterTotalFail;
             }
             set
             {
-                _bothJitFail = value;
+                _masterTotalFail = value;
                 int count = 0;
-                if (int.TryParse(_bothJitFail, out count) == false)
-                    BothJitFailFG = Brushes.Red;
+                if (int.TryParse(_masterTotalFail, out count) == false)
+                    MasterTotalFailFG = Brushes.Red;
                 else if (count != 0)
-                    BothJitFailFG = Brushes.Red;
+                    MasterTotalFailFG = Brushes.Red;
                 else
-                    BothJitFailFG = Brushes.Black;
-                NotifyPropertyChanged("BothJitFail");
+                    MasterTotalFailFG = Brushes.Black;
+                NotifyPropertyChanged("MasterTotalFail");
             }
         }
 
-        private SolidColorBrush _bothJitFailFG = Brushes.Red;
-        public SolidColorBrush BothJitFailFG
+        private SolidColorBrush _masterTotalFailFG = Brushes.Red;
+        public SolidColorBrush MasterTotalFailFG
         {
             get
             {
-                return _bothJitFailFG;
+                return _masterTotalFailFG;
             }
             set
             {
-                _bothJitFailFG = value;
-                NotifyPropertyChanged("BothJitFailFG");
+                _masterTotalFailFG = value;
+                NotifyPropertyChanged("MasterTotalFailFG");
+            }
+        }
+
+        private string _bothContFail = "";
+        public string BothContFail
+        {
+            get
+            {
+                return _bothContFail;
+            }
+            set
+            {
+                _bothContFail = value;
+                int count = 0;
+                if (int.TryParse(_bothContFail, out count) == false)
+                    BothContFailFG = Brushes.Red;
+                else if (count != 0)
+                    BothContFailFG = Brushes.Red;
+                else
+                    BothContFailFG = Brushes.Black;
+                NotifyPropertyChanged("BothContFail");
+            }
+        }
+
+        private SolidColorBrush _bothContFailFG = Brushes.Red;
+        public SolidColorBrush BothContFailFG
+        {
+            get
+            {
+                return _bothContFailFG;
+            }
+            set
+            {
+                _bothContFailFG = value;
+                NotifyPropertyChanged("BothContFailFG");
+            }
+        }
+
+        private string _bothTotalFail = "";
+        public string BothTotalFail
+        {
+            get
+            {
+                return _bothTotalFail;
+            }
+            set
+            {
+                _bothTotalFail = value;
+                int count = 0;
+                if (int.TryParse(_bothTotalFail, out count) == false)
+                    BothTotalFailFG = Brushes.Red;
+                else if (count != 0)
+                    BothTotalFailFG = Brushes.Red;
+                else
+                    BothTotalFailFG = Brushes.Black;
+                NotifyPropertyChanged("BothTotalFail");
+            }
+        }
+
+        private SolidColorBrush _bothTotalFailFG = Brushes.Red;
+        public SolidColorBrush BothTotalFailFG
+        {
+            get
+            {
+                return _bothTotalFailFG;
+            }
+            set
+            {
+                _bothTotalFailFG = value;
+                NotifyPropertyChanged("BothTotalFailFG");
+            }
+        }
+
+        private string _jitServerActiveTime = "";
+        public string JitServerActiveTime
+        {
+            get
+            {
+                return _jitServerActiveTime;
+            }
+            set
+            {
+                _jitServerActiveTime = value;
+                DateTime dt;
+                if (DateTime.TryParse(_jitServerActiveTime, out dt) == false)
+                {
+                    JitServerActiveTimeFG = Brushes.Red;
+                    JitServerSleepTimeFG = Brushes.Red;
+                }
+                else
+                {
+                    JitServerSleepTimeSpan = DateTime.Now.Subtract(dt);
+                    JitServerActiveTimeFG = Brushes.Black;
+                }
+                NotifyPropertyChanged("JitServerActiveTime");
+            }
+        }
+
+        private SolidColorBrush _jitServerActiveTimeFG = Brushes.Red;
+        public SolidColorBrush JitServerActiveTimeFG
+        {
+            get
+            {
+                return _jitServerActiveTimeFG;
+            }
+            set
+            {
+                _jitServerActiveTimeFG = value;
+                NotifyPropertyChanged("JitServerActiveTimeFG");
+            }
+        }
+
+        /// <summary>
+        /// Please do not do set operation and it should be done by setting HttpDispacterSleepTimeSpan
+        /// </summary>
+        private TimeSpan _jitServerSleepTimeSpan;
+        /// <summary>
+        /// Please do not do set operation and it should be done by setting HttpDispacterSleepTimeSpan
+        /// </summary>
+        public TimeSpan JitServerSleepTimeSpan
+        {
+            get
+            {
+                return _jitServerSleepTimeSpan;
+            }
+            set
+            {
+                _jitServerSleepTimeSpan = value;
+                JitServerSleepTime =
+                    _jitServerSleepTimeSpan.Days.ToString() + " - " +
+                    _jitServerSleepTimeSpan.Hours.ToString() + ":" +
+                    _jitServerSleepTimeSpan.Minutes.ToString() + ":" +
+                    _jitServerSleepTimeSpan.Seconds.ToString() + "." +
+                    _jitServerSleepTimeSpan.Milliseconds.ToString();
+                //if (_jitServerSleepTimeSpan.TotalMinutes >= DEF_HTTP_DISPATCHER_SLEEP_TIME)
+                //    JitServerSleepTimeFG = Brushes.OrangeRed;
+                //else if (_jitServerSleepTimeSpan.TotalMinutes >= 0.0)
+                if (_jitServerSleepTimeSpan.TotalMinutes >= 0.0)
+                    JitServerSleepTimeFG = Brushes.Black;
+                else
+                    JitServerSleepTimeFG = Brushes.Red;
+                NotifyPropertyChanged("JitServerSleepTimeSpan");
+            }
+        }
+
+        /// <summary>
+        /// Please do not do set operation and it should be done by setting HttpDispacterActiveTime
+        /// </summary>
+        private string _jitServerSleepTime = "";
+        /// <summary>
+        /// Please do not do set operation and it should be done by setting HttpDispacterActiveTime
+        /// </summary>
+        public string JitServerSleepTime
+        {
+            get
+            {
+                return _jitServerSleepTime;
+            }
+            set
+            {
+                _jitServerSleepTime = value;
+                NotifyPropertyChanged("JitServerSleepTime");
+            }
+        }
+
+        private SolidColorBrush _jitServerSleepTimeFG = Brushes.Red;
+        public SolidColorBrush JitServerSleepTimeFG
+        {
+            get
+            {
+                return _jitServerSleepTimeFG;
+            }
+            set
+            {
+                _jitServerSleepTimeFG = value;
+                NotifyPropertyChanged("JitServerSleepTimeFG");
             }
         }
 
@@ -1466,6 +1705,76 @@ namespace TcpHttpManagement
             }
         }
 
+        private string _manTermFail = "";
+        public string ManTermFail
+        {
+            get
+            {
+                return _manTermFail;
+            }
+            set
+            {
+                _manTermFail = value;
+                int count = 0;
+                if (int.TryParse(_manTermFail, out count) == false)
+                    ManTermFailFG = Brushes.Red;
+                else if (count != 0)
+                    ManTermFailFG = Brushes.Red;
+                else
+                    ManTermFailFG = Brushes.Black;
+                NotifyPropertyChanged("ManTermFail");
+            }
+        }
+
+        private SolidColorBrush _manTermFailFG = Brushes.Red;
+        public SolidColorBrush ManTermFailFG
+        {
+            get
+            {
+                return _manTermFailFG;
+            }
+            set
+            {
+                _manTermFailFG = value;
+                NotifyPropertyChanged("ManTermFailFG");
+            }
+        }
+
+        private string _termFail = "";
+        public string TermFail
+        {
+            get
+            {
+                return _termFail;
+            }
+            set
+            {
+                _termFail = value;
+                int count = 0;
+                if (int.TryParse(_termFail, out count) == false)
+                    TermFailFG = Brushes.Red;
+                else if (count != 0)
+                    TermFailFG = Brushes.Red;
+                else
+                    TermFailFG = Brushes.Black;
+                NotifyPropertyChanged("TermFail");
+            }
+        }
+
+        private SolidColorBrush _termFailFG = Brushes.Red;
+        public SolidColorBrush TermFailFG
+        {
+            get
+            {
+                return _termFailFG;
+            }
+            set
+            {
+                _termFailFG = value;
+                NotifyPropertyChanged("TermFailFG");
+            }
+        }
+
         #endregion
 
         public MainWindow()
@@ -1481,7 +1790,7 @@ namespace TcpHttpManagement
         {
             lock (_objLock)
             {
-                if (LogIsAutoScrolling == false || LogDisplayOc.Count < 1)
+                if (LogIsAutoScrolling == false || LogDisplayOc.Count < 1 || ManagementTabSelected != 1)
                     return;
 
                 Dispatcher.Invoke((ThreadStart)delegate()
@@ -1568,7 +1877,7 @@ namespace TcpHttpManagement
             if (e.Cancel == false)
             {
                 AddMessage2Oc(msg: "Application exits.");
-                
+
                 _manageCts.Cancel();
                 try
                 {
@@ -1644,7 +1953,7 @@ namespace TcpHttpManagement
                         string fn = fi.Substring(fi.LastIndexOf(@"\") + 1);
                         string[] fna = fn.Split(new string[] { "." }, StringSplitOptions.RemoveEmptyEntries);
                         int iv = int.Parse(fna[1]);
-                        ca[index] = (iv > 0)? iv : 0;
+                        ca[index] = (iv > 0) ? iv : 0;
                     }
                     catch (Exception ex)
                     {
@@ -1670,7 +1979,7 @@ namespace TcpHttpManagement
                         im = im + 1;
                         curLogFile = LogFolder + @"\ServerMonitor." + im.ToString() + ".log";
                     }
-                }                
+                }
                 StreamWriter sw = new StreamWriter(curLogFile, true);
                 StringBuilder sb = new StringBuilder();
                 foreach (LogItem li in _logOc)
@@ -1743,11 +2052,11 @@ namespace TcpHttpManagement
                     }
                     else if (i == 3)
                     {
-                       string s = strLine.Trim();
-                       if (Directory.Exists(s) == false)
-                           AddMessage2Oc(status: LogItem.StatusEnum.Error, msg: "Invalid Default Log Folder : " + s);
-                       else
-                           LogFolder = s;
+                        string s = strLine.Trim();
+                        if (Directory.Exists(s) == false)
+                            AddMessage2Oc(status: LogItem.StatusEnum.Error, msg: "Invalid Default Log Folder : " + s);
+                        else
+                            LogFolder = s;
 
                     }
                     else
@@ -1971,11 +2280,17 @@ namespace TcpHttpManagement
                                     case "UseMaster":
                                         UseMaster = sib;
                                         break;
-                                    case "MasterFC":
-                                        MasterJitFail = sib;
+                                    case "MasterContFail":
+                                        MasterContFail = sib;
                                         break;
-                                    case "JitFC":
-                                        BothJitFail = sib;
+                                    case "MasterTotalFail":
+                                        MasterTotalFail = sib;
+                                        break;
+                                    case "JitContFail":
+                                        BothContFail = sib;
+                                        break;
+                                    case "JitTotalFail":
+                                        BothTotalFail = sib;
                                         break;
                                     case "HttpMin":
                                         HttpMin = sib;
@@ -2029,6 +2344,15 @@ namespace TcpHttpManagement
                                         break;
                                     case "HttpDispatcher":
                                         HttpDispatcherActiveTime = sib;
+                                        break;
+                                    case "LastJitTS":
+                                        JitServerActiveTime = sib;
+                                        break;
+                                    case "ManTotalFail":
+                                        ManTermFail = sib;
+                                        break;
+                                    case "TermTotalFail":
+                                        TermFail = sib;
                                         break;
                                 }
                             }
@@ -2117,18 +2441,30 @@ namespace TcpHttpManagement
                 case MT_QRY_ALL_2TERM_COUNT_ERR:
                     AddMessage2Oc(status: LogItem.StatusEnum.Error, msg: "Query count of stored to-term messages fails.");
                     break;
-                case MT_QRY_MASTER_JIT_FAIL_OK:
-                    MasterJitFail = body;
+                case MT_QRY_MASTER_JIT_CONT_FAIL_OK:
+                    MasterContFail = body;
                     break;
-                case MT_QRY_MASTER_JIT_FAIL_ERR:
-                    AddMessage2Oc(status: LogItem.StatusEnum.Error, msg: "Query count of master jit failures fails.");
-                    break;
-                case MT_QRY_BOTH_JIT_FAIL_OK:
-                    BothJitFail = body;
-                    break;
-                case MT_QRY_BOTH_JIT_FAIL_ERR:
-                    AddMessage2Oc(status: LogItem.StatusEnum.Error, msg: "Query count of both jit failures fails.");
-                    break;
+                case MT_QRY_MASTER_JIT_CONT_FAIL_ERR:
+                    AddMessage2Oc(status: LogItem.StatusEnum.Error, msg: "Query count of master jit continous failures fails.");
+                   break;
+                case MT_QRY_MASTER_JIT_TOTAL_FAIL_OK:
+                   MasterTotalFail = body;
+                   break;
+                case MT_QRY_MASTER_JIT_TOTAL_FAIL_ERR:
+                     AddMessage2Oc(status: LogItem.StatusEnum.Error, msg: "Query count of master jit total failures fails.");
+                  break;
+                case MT_QRY_BOTH_JIT_CONT_FAIL_OK:
+                  BothContFail = body;
+                  break;
+                case MT_QRY_BOTH_JIT_CONT_FAIL_ERR:
+                  AddMessage2Oc(status: LogItem.StatusEnum.Error, msg: "Query count of both jit continous failures fails.");
+                  break;
+                case MT_QRY_BOTH_JIT_TOTAL_FAIL_OK:
+                  BothTotalFail = body;
+                  break;
+                case MT_QRY_BOTH_JIT_TOTAL_FAIL_ERR:
+                  AddMessage2Oc(status: LogItem.StatusEnum.Error, msg: "Query count of both jit total failures fails.");
+                  break;
                 case MT_QRY_ACC_TERM_CONT_FAIL_OK:
                     AccTermContFail = body;
                     break;
@@ -2344,26 +2680,6 @@ namespace TcpHttpManagement
         private void RefreshOriDisplayLog_Button_click(object sender, RoutedEventArgs e)
         {
             PutRequest(MT_QRY_ORI_DISPLAY_LOG_STATE);
-        }
-
-        private void RefreshMasterJitFail_Button_click(object sender, RoutedEventArgs e)
-        {
-            PutRequest(MT_QRY_MASTER_JIT_FAIL);
-        }
-
-        private void ClearMasterJitFail_Button_click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void RefreshBothJitFail_Button_click(object sender, RoutedEventArgs e)
-        {
-            PutRequest(MT_QRY_BOTH_JIT_FAIL);
-        }
-
-        private void ClearBothJitFail_Button_click(object sender, RoutedEventArgs e)
-        {
-
         }
 
         private void RefreshHttpIdle_Button_click(object sender, RoutedEventArgs e)
@@ -2612,6 +2928,126 @@ namespace TcpHttpManagement
         }
 
         private void RefreshHttpDispatcherSleepTime_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void RefreshBothContFail_Button_click(object sender, RoutedEventArgs e)
+        {
+            PutRequest(MT_QRY_BOTH_JIT_CONT_FAIL);
+        }
+
+        private void QueryBothContFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void SaveBothContFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void ClearBothContFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void RefreshBothTotalFail_Button_click(object sender, RoutedEventArgs e)
+        {
+            PutRequest(MT_QRY_BOTH_JIT_TOTAL_FAIL);
+        }
+
+        private void QueryBothTotalFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void SaveBothTotalFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void ClearBothTotalFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void RefreshMasterContFail_Button_click(object sender, RoutedEventArgs e)
+        {
+            PutRequest(MT_QRY_MASTER_JIT_CONT_FAIL);
+        }
+
+        private void QueryMasterContFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void SaveMasterContFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void RefreshMasterTotalFail_Button_click(object sender, RoutedEventArgs e)
+        {
+            PutRequest(MT_QRY_MASTER_JIT_TOTAL_FAIL);
+        }
+
+        private void QueryMasterTotaltFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void SaveMasterTotalFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void ClearMasterTotalFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void ClearMasterContFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void RefreshManTermFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void QueryManTermFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void SaveManTermFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void ClearManTermFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void RefreshTermFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void QueryTermFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void SaveTermFail_Button_click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void ClearTermFail_Button_click(object sender, RoutedEventArgs e)
         {
 
         }

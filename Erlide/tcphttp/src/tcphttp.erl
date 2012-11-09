@@ -36,7 +36,7 @@
 %%
 %% Release version
 %%
--export([start/0,start/1,start/2,start/9,stop/0]).
+-export([start/0,start/1,start/2,start/8,stop/0]).
 
 %%
 %% Data Structure 
@@ -84,15 +84,15 @@ start3(DisplayLog) ->
 start3(DisplayLog,LogLevel) ->
 	startn("http://api.21com.com",DisplayLog,LogLevel).
 startn(HttpServer,DisplayLog,LogLevel) ->
-	start(HttpServer,?HTTP_PROCESSES_COUNT,?MASTER_TCP_SERVER,?MASTER_TCP_SERVER_PORT,?SLAVE_TCP_SERVER,?SLAVE_TCP_SERVER_PORT,?JIT_PROCESSES_COUNT,DisplayLog,LogLevel).
+	start(HttpServer,?HTTP_PROCESSES_COUNT,?MASTER_TCP_SERVER,?MASTER_TCP_SERVER_PORT,?SLAVE_TCP_SERVER,?SLAVE_TCP_SERVER_PORT,DisplayLog,LogLevel).
 
 start() ->
 	start(false).
 start(DisplayLog) ->
 	start(DisplayLog,?MSG_LEVEL_ERROR).
 start(DisplayLog,LogLevel) ->
-	start(?HTTP_SERVER_NOPORT,?HTTP_PROCESSES_COUNT,?MASTER_TCP_SERVER,?MASTER_TCP_SERVER_PORT,?SLAVE_TCP_SERVER,?SLAVE_TCP_SERVER_PORT,?JIT_PROCESSES_COUNT,DisplayLog,LogLevel).
-start(HttpServer,HttpInstCount,TcpServer,TcpPort,TcpServer2,TcpPort2,TcpInstCount,DisplayLog,LogLevel) ->
+	start(?HTTP_SERVER_NOPORT,?HTTP_PROCESSES_COUNT,?MASTER_TCP_SERVER,?MASTER_TCP_SERVER_PORT,?SLAVE_TCP_SERVER,?SLAVE_TCP_SERVER_PORT,DisplayLog,LogLevel).
+start(HttpServer,HttpInstCount,TcpServer,TcpPort,TcpServer2,TcpPort2,DisplayLog,LogLevel) ->
 	init(DisplayLog,LogLevel),
 	%% !!!
 	%% In the previous definition, the messsages from the terminal, the http server and the jit servers should be kept in the file.
@@ -121,7 +121,7 @@ start(HttpServer,HttpInstCount,TcpServer,TcpPort,TcpServer2,TcpPort2,TcpInstCoun
 	try gen_tcp:listen(?MT_LISTEN_PORT,[binary,{packet,0},{reuseaddr,true}, {active,once}]) of
 	    {ok,ListenMan} ->
 			loginfo("Server management started~n"),
-			spawn(fun() -> connectmanagement(ListenMan,1) end);
+			spawn(fun() -> connectmanagement(ListenMan,0) end);
 	    {error,ReasonMan} ->
 			stop(),
 			logerror("Server management start fails : ~p and exits~n", [ReasonMan]),
@@ -155,14 +155,13 @@ start(HttpServer,HttpInstCount,TcpServer,TcpPort,TcpServer2,TcpPort2,TcpInstCoun
 			exit(WhyHttp)
 	end,
 	try starthttpdispatcher(HttpServer) of
-		true ->
+		_ ->
 			loginfo("Http dispatcher started~n")
 	catch
 		_:WhyDispatcher ->
 			logerror("Http dispacteher exception : ~p and exits~n",[WhyDispatcher]),
 			exit(WhyDispatcher)
-	end,
-	TcpInstCount.
+	end.
 	%%try startjitprocesses(TcpInstCount) of
 	%%	{ok,JitCount} ->
 	%%		loginfo(string:concat(integer_to_list(JitCount), " jit processes started~n"));
@@ -174,6 +173,76 @@ start(HttpServer,HttpInstCount,TcpServer,TcpPort,TcpServer2,TcpPort2,TcpInstCoun
 	%%		logerror("Jit processes exception : ~p and exits~n",WhyJit),
 	%%		exit(WhyJit)
 	%%end.
+
+starthttpdispatcher(HttpServer) ->
+	Pid = spawn(fun() -> httpdispatcherprocinst(HttpServer,0) end),
+	TimeStamp = calendar:now_to_local_time(erlang:now()),
+	ets:insert(serverstatetable, {httpdispatcher,Pid,TimeStamp}),
+	loginfo("Http dispatcher process PID : ~p~n",Pid).
+
+httpdispatcherprocinst(HttpServer,Index) ->
+	if
+		Index >= ?HTTP_DISPATCHER_TIME_INTERVAL_MS ->
+			TimeStamp = calendar:now_to_local_time(erlang:now()),
+			ets:insert(serverstatetable, {httpdispatcher,self(),TimeStamp}),
+			NewIndex = 0;
+		Index < ?HTTP_DISPATCHER_TIME_INTERVAL_MS ->
+			NewIndex = Index + 1
+	end,
+	NormHttpProcCount = ets:select_count(normalhttpprocesstable, [{{'$1'},[],[true]}]),
+	if
+		NormHttpProcCount < 1 ->
+			logerror("No active http connection and http dispatcher stops.~n"),
+			TimeStamp1 = calendar:now_to_local_time(erlang:now()),
+			ets:insert(serverstatetable, {httpdispatcher,self(),TimeStamp1});
+		NormHttpProcCount >= 1 ->
+			if
+				NormHttpProcCount < ?HTTP_PROCESSES_MIN_COUNT ->
+					logwarning("The count of active http connections are =< ~p~n",[?HTTP_PROCESSES_MIN_COUNT]);
+				NormHttpProcCount >= ?HTTP_PROCESSES_MIN_COUNT ->
+					ok
+			end,
+			HttpProcCount = ets:select_count(httpprocesstable, [{{'$1'},[],[true]}]),
+			if
+				HttpProcCount < 1 ->
+					loginfo("No idle http connection and http dispatcher waits.~n"),
+					timer:sleep(1);
+				HttpProcCount >= 1 ->
+					if
+						HttpProcCount < ?HTTP_PROCESSES_MIN_COUNT ->
+							logwarning("The count of idle http connections are =< ~p~n",[?HTTP_PROCESSES_MIN_COUNT]);
+						HttpProcCount >= ?HTTP_PROCESSES_MIN_COUNT ->
+							ok
+					end,
+					case ets:first(msg2httptable) of
+						'$end_of_table' ->
+							timer:sleep(1);
+						Key ->
+							Msges = ets:lookup(msg2httptable, Key),
+							ets:delete(msg2httptable, Key),
+							Pid = ets:first(httpprocesstable),
+							%% !!!
+							%% Disable this loginfo because the data will be too many
+							%% It is only for debug mode
+							%% !!!
+							%%loginfo("Current http process id : ~p~n",Pid),
+							ets:delete(httpprocesstable, Pid),
+							HDPid = self(),
+							spawn(fun() -> httpdispatcherprocess(HttpServer,HDPid,Pid,Msges) end)
+					end
+			end,
+			httpdispatcherprocinst(HttpServer,NewIndex)
+	end.
+
+httpdispatcherprocess(HttpServer,HDPid,Pid,Msges) ->
+	case Msges of
+		[] ->
+			ets:insert(httpprocesstable, {Pid});
+		_ ->
+			[First|Others] = Msges,
+			Pid!{HDPid,First},
+			httpdispatcherprocess(HttpServer,HDPid,Pid,Others)
+	end.
 			
 %%
 %% Start Http processes pool
@@ -202,94 +271,32 @@ starthttpprocesses(HttpServer,HttpInstCount) ->
 %% Pid,Socket,Timstamp,Msg
 %%
 startsinglehttpprocess(HttpServer) ->
-	Pid = spawn(fun() -> singlehttpprocess(HttpServer) end),
-	ets:insert(httpprocesstable, {Pid}),
-	ets:insert(normalhttpprocesstable, {Pid}).
+	ProcPid = spawn(fun() -> singlehttpprocess(HttpServer) end),
+	ets:insert(httpprocesstable, {ProcPid}),
+	ets:insert(normalhttpprocesstable, {ProcPid}).
 
 singlehttpprocess(HttpServer) ->
 	receive
-		{Pid,Msg} ->
-			Pid,
-			{TimeStamp,Socket,HttpBin} = Msg,
-			case connecthttpserver(HttpServer,TimeStamp,Socket,HttpBin) of
-				ok ->
-					singlehttpprocess(HttpServer);
-				{error,Reason} ->
-					logerror("Http process ~p error : ~p~n",[self(),Reason]),
-					ets:delete(normalhttpprocesstable, self())
+		{HDPid,Msg} ->
+			[{httpdispatcher,Pid,_}] = ets:lookup(serverstatetable, httpdispatcher),
+			case HDPid of
+				Pid ->
+					{TimeStamp,Socket,HttpBin} = Msg,
+					case connecthttpserver(HttpServer,TimeStamp,Socket,HttpBin) of
+						ok ->
+							singlehttpprocess(HttpServer);
+						{error,Reason} ->
+							logerror("Http process ~p error : ~p~n",[self(),Reason]),
+							ets:delete(httpprocesstable, self()),
+							ets:delete(normalhttpprocesstable, self())
+					end;
+				_ ->
+					loginfo("Http process ~p received unknown http message souce Pid : ~p~n", [self(),HDPid]),
+					singlehttpprocess(HttpServer)
 			end;
 		stop ->
-			loginfo("Http process ~p stopped~n", self()),
+			loginfo("Http process ~p is required to stop~n", self()),
 			ets:delete(normalhttpprocesstable, self())
-	end.
-
-starthttpdispatcher(HttpServer) ->
-	Pid = spawn(fun() -> httpdispatcherprocinst(HttpServer,0) end),
-	TimeStamp = calendar:now_to_local_time(erlang:now()),
-	ets:insert(serverstatetable, {httpdispatcher,Pid,TimeStamp}).
-
-httpdispatcherprocinst(HttpServer,Index) ->
-	if
-		Index >= ?HTTP_DISPATCHER_TIME_INTERVAL_MS ->
-			TimeStamp = calendar:now_to_local_time(erlang:now()),
-			ets:insert(serverstatetable, {httpdispatcher,self(),TimeStamp}),
-			NewIndex = 0;
-		Index < ?HTTP_DISPATCHER_TIME_INTERVAL_MS ->
-			NewIndex = Index + 1
-	end,
-	NormHttpProcCount = ets:select_count(normalhttpprocesstable, [{{'$1'},[],[true]}]),
-	if
-		NormHttpProcCount < 1 ->
-			logerror("No active http connection and http dispatcher stops.~n"),
-			ets:insert(serverstatetable, {httpdispatcher,-1,-1});
-		NormHttpProcCount >= 1 ->
-			if
-				NormHttpProcCount < ?CONNECT_HTTP_WARN_COUNT ->
-					logwarning("The count of active http connections are =< ~p~n",[?CONNECT_HTTP_WARN_COUNT]);
-				NormHttpProcCount >= ?CONNECT_HTTP_WARN_COUNT ->
-					ok
-			end,
-			HttpProcCount = ets:select_count(httpprocesstable, [{{'$1'},[],[true]}]),
-			if
-				HttpProcCount < 1 ->
-					loginfo("No idle http connection and http dispatcher waits.~n"),
-					timer:sleep(1);
-				HttpProcCount >= 1 ->
-					if
-						HttpProcCount < ?CONNECT_HTTP_WARN_COUNT ->
-							logwarning("The count of idle http connections are =< ~p~n",[?CONNECT_HTTP_WARN_COUNT]);
-						HttpProcCount >= ?CONNECT_HTTP_WARN_COUNT ->
-							ok
-					end,
-					case ets:first(msg2httptable) of
-						'$end_of_table' ->
-							timer:sleep(1);
-						Key ->
-							Msges = ets:lookup(msg2httptable, Key),
-							ets:delete(msg2httptable, Key),
-							Pid = ets:first(httpprocesstable),
-							%% !!!
-							%% Disable this loginfo because the data will be too many
-							%% !!!
-							%%loginfo("Current http process id : ~p~n",Pid),
-							ets:delete(httpprocesstable, Pid),
-							httpdispatcherprocess(HttpServer,Pid,Msges)
-					end
-			end,
-			httpdispatcherprocinst(HttpServer,NewIndex)
-	end.
-
-httpdispatcherprocess(HttpServer,Pid,Msges) ->
-	spawn(fun() -> dohttpdispatcherprocess(HttpServer,Pid,Msges) end).
-
-dohttpdispatcherprocess(HttpServer,Pid,Msges) ->
-	case Msges of
-		[] ->
-			ets:insert(httpprocesstable, {Pid});
-		_ ->
-			[First|Others] = Msges,
-			Pid!{self(),First},
-			dohttpdispatcherprocess(HttpServer,Pid,Others)
 	end.
 
 %%
@@ -307,6 +314,8 @@ connecthttpserver(HttpServer,TimeStamp,Socket,HttpBin) ->
 	Options = [{body_format,binary}],
 	try httpc:request(post,{HttpServer,[],ContentType,HttpBin},[],Options) of
 		{ok,_} ->
+			%%TimeStamp = calendar:now_to_local_time(erlang:now()),
+			%%ets:insert(serverstatetable,{lasthttptimestamp,TimeStamp}),
 			ok;
 		{error,Reason} ->
 			logerror("Requesting http server fail : ~p~n",[Reason]),
@@ -357,18 +366,34 @@ init(DisplayLog,LogLevel) ->
 	ets:insert(serverstatetable,{displaylog,DisplayLog}),
 	ets:insert(serverstatetable,{oridisplaylog,DisplayLog}),
 	ets:insert(serverstatetable,{usemasterjit,true}),
-	ets:insert(serverstatetable,{masterjitfail,0}),
-	ets:insert(serverstatetable,{jitserverfail,0}),
-	%%ets:insert(serverstatetable,{httpserverfail,0}),
-	ets:insert(serverstatetable,{accepttermcontfail,0}),
-	ets:insert(serverstatetable,{accepttermtotalfail,0}),
-	ets:insert(serverstatetable,{acceptmancontfail,0}),
-	ets:insert(serverstatetable,{acceptmantotalfail,0}),
+	ets:insert(serverstatetable,{masterjitcontfail,0}),
+	ets:insert(serverstatetable,{masterjittotalfail,0}),
+	ets:insert(serverstatetable,{jitservercontfail,0}),
+	ets:insert(serverstatetable,{jitservertotalfail,0}),
 	ets:insert(serverstatetable,{logserverlevel,LogLevel}),
 	ets:insert(serverstatetable,{orilogserverlevel,LogLevel}),
-	ets:insert(serverstatetable,{httpdispatcher,-1,-1}),
 	ets:insert(serverstatetable,{httpprocessmin,?HTTP_PROCESSES_MIN_COUNT}),
 	ets:insert(serverstatetable,{httpprocessmax,?HTTP_PROCESSES_MAX_COUNT}),
+	TimeStamp = calendar:now_to_local_time(erlang:now()),
+	ets:insert(serverstatetable,{httpdispatcher,self(),TimeStamp}),
+	%% It will bring too much burden for the system
+	%%ets:insert(serverstatetable,{lastjittimestamp,TimeStamp}),
+	%% It will bring too much burden for the system
+	%%ets:insert(serverstatetable,{lasthttptimestamp,TimeStamp}),
+	ets:insert(serverstatetable,{mantotalfail,0}),
+	%% It will bring too much burden for the system
+	%%ets:insert(serverstatetable,{lastmantimestamp,TimeStamp}),
+	ets:insert(serverstatetable,{termtotalfail,0}),
+	%% It will bring too much burden for the system
+	%%ets:insert(serverstatetable,{lasttermtimestamp,TimeStamp}),
+	ets:insert(serverstatetable,{acceptmancontfail,0}),
+	ets:insert(serverstatetable,{acceptmantotalfail,0}),
+	%% It will bring too much burden for the system
+	%%ets:insert(serverstatetable,{lastacceptmantimestamp,TimeStamp}),
+	ets:insert(serverstatetable,{accepttermcontfail,0}),
+	ets:insert(serverstatetable,{accepttermtotalfail,0}),
+	%% It will bring too much burden for the system
+	%%ets:insert(serverstatetable,{lastaccepttermtimestamp,TimeStamp}),
 	ets:new(msg2terminaltable,[set,public,named_table,{keypos,1},{read_concurrency,true},{write_concurrency,true}]),
 	ets:new(msg2jittable,[set,public,named_table,{keypos,1},{read_concurrency,true},{write_concurrency,true}]),
 	ets:new(maninstancetable,[set,public,named_table,{keypos,1},{read_concurrency,true},{write_concurrency,true}]),
@@ -383,113 +408,78 @@ init(DisplayLog,LogLevel) ->
 %%
 connectmanagement(Listen,Count) ->
 	if
-		Count > ?ACCEPT_ERROR_TOTAL_MAX ->
-			%% !!!
-			%% How to tell the management terminal?
-			%% !!!
-			logerror("Accept man-term fails ~p times~n",[?ACCEPT_ERROR_TOTAL_MAX]);
-		Count =< ?ACCEPT_ERROR_TOTAL_MAX ->
-			if
-				Count > ?ACCEPT_ERROR_CONT_MAX ->
-					%% !!!
-					%% How to tell the management terminal?
-					%% !!!
-					logerror("Accept man-term fails continously ~p times~n",[?ACCEPT_ERROR_CONT_MAX]);
-				Count =< ?ACCEPT_ERROR_CONT_MAX ->
-					%% !!!
-					%% Do we need timeout for accept here?
-					%% It seems to be unnecessary.
-					%% !!!
-					[{acceptmancontfail,ContCount}] = ets:lookup(serverstatetable, acceptmancontfail),
+		Count > ?ACCEPT_MT_ERROR_CONT_MAX ->
+			logerror("Stop accepting man-term because of continous ~p failures > limit ~p~n",[Count,?ACCEPT_MT_ERROR_CONT_MAX]);
+		Count =< ?ACCEPT_MT_ERROR_CONT_MAX ->
+		    try	gen_tcp:accept(Listen) of
+				{ok,Socket} ->
+					spawn(fun() -> connectmanagement(Listen,0) end),
+					%%TimeStamp = calendar:now_to_local_time(erlang:now()),
+					%%ets:insert(serverstatetable, {lastacceptmantimestamp,TimeStamp}),
+					ets:insert(serverstatetable, {acceptmancontfail,0}),
+					insertmansocket(Socket),
+		           	loopmanagement(Socket);
+				{error,Reason} ->
 					[{acceptmantotalfail,TotalCount}] = ets:lookup(serverstatetable, acceptmantotalfail),
-				    try	gen_tcp:accept(Listen) of
-						{ok,Socket} ->
-				           	spawn(fun() -> connectmanagement(Listen,1) end),
-							ets:insert(serverstatetable, {acceptmancontfail,0}),
-							%%[{mantermcount,ManCount}] = ets:lookup(serverstatetable, mantermcount),
-							%%ets:insert(serverstatetable, {mantermcount,ManCount+1}),
-							insertmansocket(Socket),
-							%%loginfo("Current man-term (~p)~n", [Socket]),
-				           	loopmanagement(Socket);
-						{error,Reason} ->
-							ets:insert(serverstatetable, {acceptmancontfail,ContCount+1}),
-							ets:insert(serverstatetable, {acceptmantotalfail,TotalCount+1}),
-							logerror("Accepting man-term fails (cont ~p/total ~p) : ~p~n",[ContCount+1,TotalCount+1,Reason]),
-				           	spawn(fun() -> connectmanagement(Listen,Count+1) end)
-					catch
-						_:Why ->
-							ets:insert(serverstatetable, {acceptmancontfail,ContCount+1}),
-							ets:insert(serverstatetable, {acceptmantotalfail,TotalCount+1}),
-							logerror("Accepting man-term exceptions (cont ~p/total ~p) : ~p~n",[ContCount+1,TotalCount+1,Why]),
-				           	spawn(fun() -> connectmanagement(Listen,Count+1) end)
-					end
+					ets:insert(serverstatetable, {acceptmancontfail,Count+1}),
+					ets:insert(serverstatetable, {acceptmantotalfail,TotalCount+1}),
+					logerror("Accepting man-term failures (continous ~p/total ~p) : ~p~n",[Count+1,TotalCount+1,Reason]),
+		           	spawn(fun() -> connectmanagement(Listen,Count+1) end)
+			catch
+				_:Why ->
+					[{acceptmantotalfail,TotalCount}] = ets:lookup(serverstatetable, acceptmantotalfail),
+					ets:insert(serverstatetable, {acceptmancontfail,Count+1}),
+					ets:insert(serverstatetable, {acceptmantotalfail,TotalCount+1}),
+					logerror("Accepting man-term exceptions (continous ~p/total ~p) : ~p~n",[Count+1,TotalCount+1,Why]),
+		           	spawn(fun() -> connectmanagement(Listen,Count+1) end)
 			end
 	end.
 
 loopmanagement(Socket) ->
+	{_,{Address,Port}}=getsafepeername(Socket),
 	receive
 		{tcp,Socket,Bin} ->
-			%% Update the latest commnucation time between the man term and the server
-			insertmansocket(Socket),
-			%% !!!
-			%% Do management here, for example, stop server, enaable/disable display, switch jit master/slave and etc.
-			%% !!!
-			%%loginfo("Data from man-term",Bin),
 			BinResp = processmanagementdata(Bin),
-			%%loginfo("Data to man-term",BinResp),
 			case connectmanterm(Socket,BinResp) of
 				ok ->
 					inet:setopts(Socket,[{active,once}]),
+					%%TimeStamp = calendar:now_to_local_time(erlang:now()),
+					%%ets:insert(serverstatetable,{lastmantimestamp,TimeStamp}),
 					loopmanagement(Socket);
-				{error,_} ->
-					logerror("Close man-term socket~n"),
-					%% !!!
-					%% Should server send message to management terminal before close?
-					%% If so, please check which kind of message
-					%% Does tcp_error mean that server cannot send data to management terminal?
-					%% !!!
-					closetcpsocket(Socket,"man-term"),
-					%%[{mantermcount,ManCount}] = ets:lookup(serverstatetable, mantermcount),
-					%%ets:insert(serverstatetable, {mantermcount,ManCount-1})
-					deletemansocket(Socket)
+				{error,Reason} ->
+					logerror("Close and delete man-term socket (~p:~p) because of sending response data to man-term error : ~p~n", [Address,Port,Reason]),
+					[{mantotalfail,TotalCount}] = ets:lookup(serverstatetable, mantotalfail),
+					ets:insert(serverstatetable,{mantotalfail,TotalCount+1}),
+					deletemansocket(Socket),
+					closetcpsocket(Socket,"man-term")
 			end;
 		{tcp_closed,Socket} ->
-			%%logerror("Man-term close socket (~p)~n", [Socket]),
-			%%[{mantermcount,ManCount}] = ets:lookup(serverstatetable, mantermcount),
-			%%ets:insert(serverstatetable, {mantermcount,ManCount-1});
+			loginfo("Delete man-term socket (~p:~p) because man-term has closed it~n", [Address,Port]),
 			deletemansocket(Socket);
 		{tcp_error,Socket} ->
-			logerror("Man-term socket (~p) tcp_error~n", [Socket]),
-			logerror("Close man-term socket~n"),
-			%% !!!
-			%% Should server send message to management terminal before close?
-			%% If so, please check which kind of message
-			%% Does tcp_error mean that server cannot send data to management terminal?
-			%% !!!
-			closetcpsocket(Socket,"man-term"),
-			%%[{mantermcount,ManCount}] = ets:lookup(serverstatetable, mantermcount),
-			%%ets:insert(serverstatetable, {mantermcount,ManCount-1});
-			deletemansocket(Socket);
+			logerror("Close and delete man-term socket (~p:~p) because of tcp_error~n", [Address,Port]),
+			[{mantotalfail,TotalCount}] = ets:lookup(serverstatetable, mantotalfail),
+			ets:insert(serverstatetable,{mantotalfail,TotalCount+1}),
+			deletemansocket(Socket),
+			closetcpsocket(Socket,"man-term");
+		{tcp_error,Socket,Reason} ->
+			logerror("Close and delete man-term socket (~p:~p) because of tcp_error : ~p~n", [Address,Port,Reason]),
+			[{mantotalfail,TotalCount}] = ets:lookup(serverstatetable, mantotalfail),
+			ets:insert(serverstatetable,{mantotalfail,TotalCount+1}),
+			deletemansocket(Socket),
+			closetcpsocket(Socket,"man-term");
 		Msg ->
-			logerror("Unknown server state for man-term socket (~p) : ~p~n", [Socket,Msg]),
-			logerror("Close man-term socket~n"),
-			%% !!!
-			%% Should server send message to management terminal before close?
-			%% If so, please check which kind of message
-			%% !!!
-			connectmanterm(Socket,?UNKNWON_SOCKET_STATE),
-			closetcpsocket(Socket,"man-term"),
-			%%[{mantermcount,ManCount}] = ets:lookup(serverstatetable, mantermcount),
-			%%ets:insert(serverstatetable, {mantermcount,ManCount-1})
-			deletemansocket(Socket)
+			logerror("Colose man-term socket (~p:~p) because of unknown server state : ~p~n", [Address,Port,Msg]),
+			[{mantotalfail,TotalCount}] = ets:lookup(serverstatetable, mantotalfail),
+			ets:insert(serverstatetable,{mantotalfail,TotalCount+1}),
+			deletemansocket(Socket),
+			closetcpsocket(Socket,"man-term")
  	after ?MT_TCP_RECEIVE_TIMEOUT ->
-		logerror("No data from man-term (~p) after ~p ms~n", [Socket,?MT_TCP_RECEIVE_TIMEOUT]),
-		logerror("Close man-term socket~n"),
-		connectmanterm(Socket,?UNKNWON_TERMINAL_STATE),
-		closetcpsocket(Socket,"man-term"),
-		%%[{mantermcount,ManCount}] = ets:lookup(serverstatetable, mantermcount),
-		%%ets:insert(serverstatetable, {mantermcount,ManCount-1})
-		deletemansocket(Socket)
+		logerror("Close and delete man-term (~p:~p) socket (~p) because no data is received after ~p ms~n", [Address,Port,Socket,?MT_TCP_RECEIVE_TIMEOUT]),
+		[{mantotalfail,TotalCount}] = ets:lookup(serverstatetable, mantotalfail),
+		ets:insert(serverstatetable,{mantotalfail,TotalCount+1}),
+		deletemansocket(Socket),
+		closetcpsocket(Socket,"man-term")
 	end.
 
 %%
@@ -505,7 +495,7 @@ processmanagementdata(Bin) ->
 			BinResp
 	catch
 		_:Why ->
-			string:concat(?MT_MAN_SERVER_FAILURE,Why)
+			string:concat(?MT_UNKNOWN_SERVER_ERROR,Why)
 	end.
 
 %%
@@ -571,12 +561,18 @@ doprocessmanagementdata(Bin) ->
 						?MT_CLR_ALL_2TERM ->
 							ets:delete_all_objects(msg2terminaltable),
 							?MT_CLR_ALL_2TERM_OK;
-						?MT_CLR_BOTH_JIT_FAIL ->
-							ets:insert(serverstatetable, {jitserverfail,0}),
-							?MT_CLR_BOTH_JIT_FAIL_OK;
-						?MT_CLR_MASTER_JIT_FAIL ->
-							ets:insert(serverstatetable, {masterjitfail,0}),
-							?MT_CLR_MASTER_JIT_FAIL_OK;
+						?MT_CLR_BOTH_JIT_CONT_FAIL ->
+							ets:insert(serverstatetable, {jitservercontfail,0}),
+							?MT_CLR_BOTH_JIT_CONT_FAIL_OK;
+						?MT_CLR_BOTH_JIT_TOTAL_FAIL ->
+							ets:insert(serverstatetable, {jitservertotalfail,0}),
+							?MT_CLR_BOTH_JIT_TOTAL_FAIL_OK;
+						?MT_CLR_MASTER_JIT_CONT_FAIL ->
+							ets:insert(serverstatetable, {masterjitcontfail,0}),
+							?MT_CLR_MASTER_JIT_CONT_FAIL_OK;
+						?MT_CLR_MASTER_JIT_TOTAL_FAIL ->
+							ets:insert(serverstatetable, {masterjittotalfail,0}),
+							?MT_CLR_MASTER_JIT_TOTAL_FAIL_OK;
 						?MT_QRY_ACC_MT_CONT_FAIL ->
 							[{acceptmancontfail,Value}] = ets:lookup(serverstatetable, acceptmancontfail),
 							Str=integer_to_list(Value),
@@ -662,10 +658,22 @@ doprocessmanagementdata(Bin) ->
 								{error,Why} ->
 									string:concat(?MT_QRY_ALL_STATES_ERR, Why)
 							end;
-						?MT_QRY_BOTH_JIT_FAIL ->
-							[{jitserverfail,Value}] = ets:lookup(serverstatetable, jitserverfail),	
+						?MT_QRY_BOTH_JIT_CONT_FAIL ->
+							[{jitservercontfail,Value}] = ets:lookup(serverstatetable, jitservercontfail),	
 							Str=integer_to_list(Value),
-							string:concat(?MT_QRY_BOTH_JIT_FAIL_OK, Str);
+							string:concat(?MT_QRY_BOTH_JIT_CONT_FAIL_OK, Str);
+						?MT_QRY_BOTH_JIT_TOTAL_FAIL ->
+							[{jitservertotalfail,Value}] = ets:lookup(serverstatetable, jitservertotalfail),	
+							Str=integer_to_list(Value),
+							string:concat(?MT_QRY_BOTH_JIT_TOTAL_FAIL_OK, Str);
+						?MT_QRY_MASTER_JIT_CONT_FAIL ->
+							[{masterjitcontfail,Value}] = ets:lookup(serverstatetable, masterjitcontfail),
+							Str=integer_to_list(Value),
+							string:concat(?MT_QRY_MASTER_JIT_CONT_FAIL_OK, Str);
+						?MT_QRY_MASTER_JIT_TOTAL_FAIL ->
+							[{masterjittotalfail,Value}] = ets:lookup(serverstatetable, masterjittotalfail),
+							Str=integer_to_list(Value),
+							string:concat(?MT_QRY_MASTER_JIT_TOTAL_FAIL_OK, Str);
 						?MT_QRY_DISPLAY_LOG_STATE ->
 							[{displaylog,Value}] = ets:lookup(serverstatetable, displaylog),
 							case Value of
@@ -679,10 +687,6 @@ doprocessmanagementdata(Bin) ->
 							[{logserverlevel,Value}] = ets:lookup(serverstatetable, logserverlevel),
 							Str=integer_to_list(Value),
 							string:concat(?MT_QRY_LOG_LEVEL_OK, Str);
-						?MT_QRY_MASTER_JIT_FAIL ->
-							[{masterjitfail,Value}] = ets:lookup(serverstatetable, masterjitfail),
-							Str=integer_to_list(Value),
-							string:concat(?MT_QRY_MASTER_JIT_FAIL_OK, Str);
 						?MT_QRY_USE_MASTER_STATE ->
 							[{usemasterjit,Value}] = ets:lookup(serverstatetable, usemasterjit),
 							case Value of
@@ -708,7 +712,7 @@ doprocessmanagementdata(Bin) ->
 									ets:insert(serverstatetable, {displaylog,false}),
 									?MT_SET_DISPLAY_LOG_STATE_OK;
 								_ ->
-									string:concat(?MT_UNK_MT_DATA, Body)
+									string:concat(?MT_UNKNOWN_MT_DATA, Body)
 							end;
 						?MT_SET_LOG_LEVEL ->
 							case Body of
@@ -722,7 +726,7 @@ doprocessmanagementdata(Bin) ->
 									ets:insert(serverstatetable, {logserverlevel,2}),
 									?MT_SET_LOG_LEVEL_OK;
 								_ ->
-									string:concat(?MT_UNK_MT_DATA, Body)
+									string:concat(?MT_UNKNOWN_MT_DATA, Body)
 							end;
 						?MT_SET_USE_MASTER_STATE ->
 							case Body of
@@ -733,7 +737,7 @@ doprocessmanagementdata(Bin) ->
 									ets:insert(serverstatetable, {usemasterjit,false}),
 									?MT_SET_USE_MASTER_STATE_OK;
 								_ ->
-									string:concat(?MT_UNK_MT_DATA, Body)
+									string:concat(?MT_UNKNOWN_MT_DATA, Body)
 							end;
 						?MT_QRY_ALL_MT ->
 							%% !!!
@@ -793,7 +797,11 @@ doprocessmanagementdata(Bin) ->
 						?MT_SET_HTTP_PROC_MAX_COUNT ->
 							?MT_SET_HTTP_PROC_MAX_COUNT_ERR;
 						?MT_SET_HTTP_PROC_WARN_COUNT ->
-							?MT_SET_HTTP_PROC_WARN_COUNT_ERR
+							?MT_SET_HTTP_PROC_WARN_COUNT_ERR;
+						?MT_QRY_HTTP_DISPATCHER_TIME ->
+							?MT_QRY_HTTP_DISPATCHER_TIME_ERR
+						%%?MT_QRY_LAST_VISIT_JIT_OK_TIME ->
+						%%	?MT_QRY_LAST_VISIT_JIT_OK_TIME_ERR
 					end
 			end
 	end.
@@ -805,19 +813,21 @@ getallmanterm(Terms) ->
 		_ ->
 			[First|Others] = Terms,
 			{Address,Port,TimeStamp} = First,
-			{{Year,Month,Day},{Hour,Minute,Second}} = TimeStamp,
-			S1 = string:concat(inet_parse:ntoa(Address), ","),
-			S2 = string:concat(S1, integer_to_list(Port)),
+			S1 = string:concat(Address, ","),
+			case is_integer(Port) of
+				true ->
+					S2 = string:concat(S1, integer_to_list(Port));
+				false ->
+					S2 = string:concat(S1, Port)
+			end,
 			S3 = string:concat(S2, ","),
-			S4 = string:concat(S3, lists:flatten(io_lib:format('~4..0b-~2..0b-~2..0b', [Year, Month, Day]))),
-			S5 = string:concat(S4, " "),
-			S6 = string:concat(S5, lists:flatten(io_lib:format('~2..0b:~2..0b:~2..0b', [Hour, Minute, Second]))),
+			S4 = string:concat(S3, composetimestamp(TimeStamp)),
 			case Others of
 				[] ->
-					S6;
+					S4;
 				_ ->
-					S7 = string:concat(S6, ";"),
-					string:concat(S7, getallmanterm(Others))
+					S5 = string:concat(S4, ";"),
+					string:concat(S5, getallmanterm(Others))
 			end
 	end.
 
@@ -845,12 +855,12 @@ dogetallstates() ->
 		_ ->
 			S2 = string:concat(S1, ";UseMaster:0")
 	end,
-	[{masterjitfail,MasterFC}] = ets:lookup(serverstatetable,masterjitfail),
-	S30 = string:concat(S2, ";MasterFC:"),
-	S3 = string:concat(S30, integer_to_list(MasterFC)),
-	[{jitserverfail,JitFC}] = ets:lookup(serverstatetable,jitserverfail),
-	S40 = string:concat(S3, ";JitFC:"),
-	S4 = string:concat(S40, integer_to_list(JitFC)),
+	[{masterjitcontfail,MasterContFai}] = ets:lookup(serverstatetable,masterjitcontfail),
+	S30 = string:concat(S2, ";MasterContFail:"),
+	S3 = string:concat(S30, integer_to_list(MasterContFai)),
+	[{jitservercontfail,JitContFail}] = ets:lookup(serverstatetable,jitservercontfail),
+	S40 = string:concat(S3, ";JitContFail:"),
+	S4 = string:concat(S40, integer_to_list(JitContFail)),
 	HttpIdleCount = ets:select_count(httpprocesstable, [{{'$1'},[],[true]}]),
 	S50 = string:concat(S4, ";HttpIdleCount:"),
 	S5 = string:concat(S50, integer_to_list(HttpIdleCount)),
@@ -898,11 +908,8 @@ dogetallstates() ->
 	S180 = string:concat(S17, ";TermInstCount:"),
 	S18 = string:concat(S180, integer_to_list(TermInstCount)),
 	[{httpdispatcher,_,TimeStamp}] = ets:lookup(serverstatetable,httpdispatcher),
-	{{Year,Month,Day},{Hour,Minute,Second}} = TimeStamp,
 	S190 = string:concat(S18, ";HttpDispatcher:"),
-	S191 = string:concat(S190, lists:flatten(io_lib:format('~4..0b-~2..0b-~2..0b', [Year, Month, Day]))),
-	S192 = string:concat(S191, " "),
-	S19 = string:concat(S192, lists:flatten(io_lib:format('~2..0b:~2..0b:~2..0b', [Hour, Minute, Second]))),
+	S19 = string:concat(S190, composetimestamp(TimeStamp)),
 	HttpAvailableCount = ets:select_count(normalhttpprocesstable, [{{'$1'},[],[true]}]),
 	S200 = string:concat(S19, ";HttpAvailableCount:"),
 	S20 = string:concat(S200, integer_to_list(HttpAvailableCount)),
@@ -912,7 +919,43 @@ dogetallstates() ->
 	[{httpprocessmax,HttpMax}] = ets:lookup(serverstatetable,httpprocessmax),
 	S220 = string:concat(S21, ";HttpMax:"),
 	S22 = string:concat(S220, integer_to_list(HttpMax)),
-	{ok,S22}.	
+	%%[{lastjittimestamp,JitTimeStamp}]= ets:lookup(serverstatetable,lastjittimestamp),
+	%%S230 = string:concat(S22, ";LastJitTS:"),
+	%%S23 = string:concat(S230, composetimestamp(JitTimeStamp)),
+	[{masterjittotalfail,MasterTotalFail}] = ets:lookup(serverstatetable,masterjittotalfail),
+	S240 = string:concat(S22, ";MasterTotalFail:"),
+	S24 = string:concat(S240, integer_to_list(MasterTotalFail)),
+	[{jitservertotalfail,JitTotalFail}] = ets:lookup(serverstatetable,jitservertotalfail),
+	S250 = string:concat(S24, ";JitTotalFail:"),
+	S25 = string:concat(S250, integer_to_list(JitTotalFail)),
+	%%[{lasthttptimestamp,HttpTimeStamp}]= ets:lookup(serverstatetable,lasthttptimestamp),
+	%%S260 = string:concat(S25, ";LastHttpTS:"),
+	%%S26 = string:concat(S260, composetimestamp(HttpTimeStamp)),
+	[{mantotalfail,ManTotalFail}] = ets:lookup(serverstatetable,mantotalfail),
+	S270 = string:concat(S25, ";ManTotalFail:"),
+	S27 = string:concat(S270, integer_to_list(ManTotalFail)),
+	[{termtotalfail,TermTotalFail}] = ets:lookup(serverstatetable,termtotalfail),
+	S280 = string:concat(S27, ";TermTotalFail:"),
+	S28 = string:concat(S280, integer_to_list(TermTotalFail)),
+	%%[{lastmantimestamp,ManTimeStamp}]= ets:lookup(serverstatetable,lastmantimestamp),
+	%%S290 = string:concat(S28, ";LastManTS:"),
+	%%S29 = string:concat(S290, composetimestamp(ManTimeStamp)),
+	%%[{lasttermtimestamp,TermTimeStamp}]= ets:lookup(serverstatetable,lasttermtimestamp),
+	%%S300 = string:concat(S29, ";LastTermTS:"),
+	%%S30 = string:concat(S300,composetimestamp(TermTimeStamp)), %% why this compsetimestamp will crash?
+	%%[{lastacceptmantimestamp,AccManTimeStamp}]= ets:lookup(serverstatetable,lastacceptmantimestamp),
+	%%S310 = string:concat(S28, ";LastAccManTS:"),
+	%%S31 = string:concat(S310, composetimestamp(AccManTimeStamp)),
+	%%[{lastaccepttermtimestamp,AccTermTimeStamp}]= ets:lookup(serverstatetable,lastaccepttermtimestamp),
+	%%S320 = string:concat(S31, ";LastAccTermTS:"),
+	%%S32 = string:concat(S320, composetimestamp(AccTermTimeStamp)),
+	{ok,S28}.
+
+composetimestamp(TimeStamp) ->
+	{{Year,Month,Day},{Hour,Minute,Second}} = TimeStamp,
+	S1 = lists:flatten(io_lib:format('~4..0b-~2..0b-~2..0b', [Year, Month, Day])),
+	S2 = string:concat(S1, " "),
+	string:concat(S2, lists:flatten(io_lib:format('~2..0b:~2..0b:~2..0b', [Hour, Minute, Second]))).
 
 resetallstates() ->
 	try doresetallstates() of
@@ -947,46 +990,30 @@ doresetallstates() ->
 %%
 connect(Listen,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Count) ->
 	if
-		Count > ?ACCEPT_ERROR_TOTAL_MAX ->
-			%% !!!
-			%% How to tell the management terminal?
-			%% !!!
-			logerror("Accept term fails ~p times~n",[?ACCEPT_ERROR_TOTAL_MAX]);
-		Count =< ?ACCEPT_ERROR_TOTAL_MAX ->
-			if
-				Count > ?ACCEPT_ERROR_CONT_MAX ->
-					%% !!!
-					%% How to tell the management terminal?
-					%% !!!
-					logerror("Accept term fails continously ~p times~n",[?ACCEPT_ERROR_CONT_MAX]);
-				Count =< ?ACCEPT_ERROR_CONT_MAX ->
-					%% !!!
-					%% Do we need timeout for accept here?
-					%% It seems to be unnecessary.
-					%% !!!
-					[{accepttermcontfail,ContCount}] = ets:lookup(serverstatetable, accepttermcontfail),
+		Count > ?ACCEPT_TERM_ERROR_CONT_MAX ->
+			logerror("Stop accepting term because of continous ~p failures > limit ~p~n",[Count,?ACCEPT_TERM_ERROR_CONT_MAX]);
+		Count =< ?ACCEPT_TERM_ERROR_CONT_MAX ->
+		    try	gen_tcp:accept(Listen) of
+				{ok,Socket} ->
+		           	spawn(fun() -> connect(Listen,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,1) end),
+					%%TimeStamp = calendar:now_to_local_time(erlang:now()),
+					%%ets:insert(serverstatetable, {lastaccepttermtimestamp,TimeStamp}),
+					ets:insert(serverstatetable, {accepttermcontfail,0}),
+					inserttermsocket(Socket),
+		           	loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2);
+				{error,Reason} ->
 					[{accepttermtotalfail,TotalCount}] = ets:lookup(serverstatetable, accepttermtotalfail),
-				    try	gen_tcp:accept(Listen) of
-						{ok,Socket} ->
-				           	spawn(fun() -> connect(Listen,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,1) end),
-							ets:insert(serverstatetable, {accepttermcontfail,0}),
-							%%[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
-							%%ets:insert(serverstatetable, {termcount,TermCount+1}),
-							inserttermsocket(Socket),
-							%%loginfo("Current term (~p)~n", [Socket]),
-				           	loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2);
-						{error,Reason} ->
-							ets:insert(serverstatetable, {accepttermcontfail,ContCount+1}),
-							ets:insert(serverstatetable, {accepttermtotalfail,TotalCount+1}),
-							logerror("Accepting term fails (cont ~p/total ~p) : ~p~n",[ContCount+1,TotalCount+1,Reason]),
-				           	spawn(fun() -> connect(Listen,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Count+1) end)
-					catch
-						_:Why ->
-							ets:insert(serverstatetable, {accepttermcontfail,ContCount+1}),
-							ets:insert(serverstatetable, {accepttermtotalfail,TotalCount+1}),
-							logerror("Accepting term exceptions (cont ~p/total ~p) : ~p~n",[ContCount+1,TotalCount+1,Why]),
-				           	spawn(fun() -> connect(Listen,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Count+1) end)
-					end
+					ets:insert(serverstatetable, {accepttermcontfail,Count+1}),
+					ets:insert(serverstatetable, {accepttermtotalfail,TotalCount+1}),
+					logerror("Accepting term fails (cont ~p/total ~p) : ~p~n",[Count+1,TotalCount+1,Reason]),
+		           	spawn(fun() -> connect(Listen,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Count+1) end)
+			catch
+				_:Why ->
+					[{accepttermtotalfail,TotalCount}] = ets:lookup(serverstatetable, accepttermtotalfail),
+					ets:insert(serverstatetable, {accepttermcontfail,Count+1}),
+					ets:insert(serverstatetable, {accepttermtotalfail,TotalCount+1}),
+					logerror("Accepting term exceptions (cont ~p/total ~p) : ~p~n",[Count+1,TotalCount+1,Why]),
+		           	spawn(fun() -> connect(Listen,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Count+1) end)
 			end
 	end.
 
@@ -994,105 +1021,91 @@ connect(Listen,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Count) ->
 %% If server hasn't received an data from the terminal after ?TCP_RECEIVE_TIMEOUT ms, the socket of the terminal will be closed.
 %%
 loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2) ->
+	{_,{Address,Port}}=getsafepeername(Socket,false),
 	receive
 		{tcp,Socket,Bin} ->
-			%% Update the latest commnucation time between the term and the server
-			inserttermsocket(Socket),
 			%% It is safe for the same terminal because each terminal is not allowed to report very frequenctly.
 			%% The time interval is 60m which is needed to be checked with the planner.
 			TimeStamp = calendar:now_to_local_time(erlang:now()),
-			%%loginfo("Data from term",Bin),
 			case httpservermessage(Bin) of
 				true ->
-		            HttpBin = dataprocessor:tcp2http(Bin),
-					%%loginfo("Data to http server : ~p~n",HttpBin),
 					HttpMsgCount=ets:select_count(msg2httptable, [{{'$1','$2','$3'},[],[true]}]),
 					if
-						HttpMsgCount > ?TO_HTTP_WARN_MESSAGE_COUNT -> %% Should these data be saved and the msg2httptable be cleared?
-							logwarning("The count of msg2http reaches the warning number : ~p~n",[?TO_HTTP_WARN_MESSAGE_COUNT]);
-						HttpMsgCount > ?TO_HTTP_MAX_MESSAGE_COUNT -> %% Should these data be saved and the msg2httptable be cleared?
-							logerror("The count of msg2http reaches the max number : ~p~n",[?TO_HTTP_MAX_MESSAGE_COUNT]);
+						HttpMsgCount > ?TO_HTTP_MAX_MESSAGE_COUNT -> 
+							logerror("The current msg2http will be discarded because the count of msg2http ~p > the max number : ~p~n",[HttpMsgCount,?TO_HTTP_MAX_MESSAGE_COUNT]);
+						HttpMsgCount > ?TO_HTTP_WARN_MESSAGE_COUNT ->
+							logwarning("The count of msg2http : ~p > the warning number : ~p~n",[HttpMsgCount,?TO_HTTP_WARN_MESSAGE_COUNT]);
 						HttpMsgCount =< ?TO_HTTP_WARN_MESSAGE_COUNT ->
 							ok
 					end,
-					%%loginfo("Already stored msg2http message count : ~p~n",[HttpMsgCount]),
-					NormalHttpProcCount=ets:select_count(normalhttpprocesstable, [{{'$1'},[],[true]}]),
 					if
-						NormalHttpProcCount < 1 ->
-							logerror("No active http connection.~n"),
-							HttpError = string:concat(?MT_HTTP_FAILURE, "No active http connection"),
-							connectterm(Socket,HttpError),
+						HttpMsgCount > ?TO_HTTP_MAX_MESSAGE_COUNT ->
+							logerror("Delete and close the current term socket (~p:~p)~n",[Address,Port]),
 							deletetermsocket(Socket),
 							closetcpsocket(Socket,"term");
-						NormalHttpProcCount >= 1 ->
+						HttpMsgCount =< ?TO_HTTP_MAX_MESSAGE_COUNT ->
+				            HttpBin = dataprocessor:tcp2http(Bin),
+							NormalHttpProcCount=ets:select_count(normalhttpprocesstable, [{{'$1'},[],[true]}]),
 							if
-								NormalHttpProcCount < ?CONNECT_HTTP_WARN_COUNT ->
-									logwarning("The count of active http connections are =< ~p~n",[?CONNECT_HTTP_WARN_COUNT]);
-								NormalHttpProcCount >= ?CONNECT_HTTP_WARN_COUNT ->
-									ok
-							end,
-							ets:insert(msg2httptable, {TimeStamp,Socket,HttpBin}),
-							%%ets:insert(msg2jittable, {TimeStamp,Socket,Bin}),
-							doconnecttcpserver(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Socket,TimeStamp,Bin)
+								NormalHttpProcCount < 1 ->
+									logerror("Close and delete term socket (~p:~p) because of no active http connection.~n", [Address,Port]),
+									deletetermsocket(Socket),
+									closetcpsocket(Socket,"term");
+								NormalHttpProcCount >= 1 ->
+									if
+										NormalHttpProcCount < ?HTTP_PROCESSES_MIN_COUNT ->
+											logwarning("The count of active http connections (~p) < the warning number : ~p~n",[NormalHttpProcCount,?HTTP_PROCESSES_MIN_COUNT]);
+										NormalHttpProcCount >= ?HTTP_PROCESSES_MIN_COUNT ->
+											ok
+									end,
+									ets:insert(msg2httptable, {TimeStamp,Socket,HttpBin}),
+									doconnecttcpserver(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Socket,TimeStamp,Bin)
+							end
 					end;
 				false ->
 					NormalHttpProcCount=ets:select_count(normalhttpprocesstable, [{{'$1'},[],[true]}]),
 					if
 						NormalHttpProcCount < 1 ->
-							logerror("No active http connection.~n"),
-							HttpError = string:concat(?MT_HTTP_FAILURE, "No active http connection"),
-							connectterm(Socket,HttpError),
+							logerror("Close and delete term socket (~p:~p) because of no active http connection.~n", [Address,Port]),
 							deletetermsocket(Socket),
 							closetcpsocket(Socket,"term");
 						NormalHttpProcCount >= 1 ->
 							if
-								NormalHttpProcCount < ?CONNECT_HTTP_WARN_COUNT ->
-									logwarning("The count of active http connections are =< ~p~n",[?CONNECT_HTTP_WARN_COUNT]);
-								NormalHttpProcCount >= ?CONNECT_HTTP_WARN_COUNT ->
+								NormalHttpProcCount < ?HTTP_PROCESSES_MIN_COUNT ->
+									logwarning("The count of active http connections (~p) < the warning number : ~p~n",[NormalHttpProcCount,?HTTP_PROCESSES_MIN_COUNT]);
+								NormalHttpProcCount >= ?HTTP_PROCESSES_MIN_COUNT ->
 									ok
 							end,
-							%%ets:insert(msg2jittable, {TimeStamp,Socket,Bin}),
 							doconnecttcpserver(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Socket,TimeStamp,Bin)
 					end
 			end;
 		{tcp_closed,Socket} ->
-			%%logerror("Term close socket (~p)~n", [Socket]),
-			%%[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
-			%%ets:insert(serverstatetable, {termcount,TermCount-1});
+			loginfo("Delete term socket (~p:~p) because term has closed it~n", [Address,Port]),
 			deletetermsocket(Socket);
 		{tcp_error,Socket} ->
-			logerror("Term socket (~p) tcp_error~n", [Socket]),
-			%% !!!
-			%% Should server send message to terminal before close?
-			%% If so, please check which kind of message
-			%% Does tcp_error mean that server cannot send data to terminal?
-			%% !!!
-			logerror("Close term socket (~p)~n", [Socket]),
+			logerror("Close and delete term socket (~p:~p) because of tcp_error~n", [Address,Port]),
+			[{termtotalfail,TotalCount}] = ets:lookup(serverstatetable, termtotalfail),
+			ets:insert(serverstatetable,{termtotalfail,TotalCount+1}),
 			deletetermsocket(Socket),
 			closetcpsocket(Socket,"term");
-			%%[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
-			%%ets:insert(serverstatetable, {termcount,TermCount-1});
+		{tcp_error,Socket,Reason} ->
+			logerror("Close and delete term socket (~p:~p) because of tcp_error : ~n", [Address,Port,Reason]),
+			[{termtotalfail,TotalCount}] = ets:lookup(serverstatetable, termtotalfail),
+			ets:insert(serverstatetable,{termtotalfail,TotalCount+1}),
+			deletetermsocket(Socket),
+			closetcpsocket(Socket,"term");
 		Msg ->
-			logerror("Unknown server state for term socket (~p) : ~p~n", [Socket,Msg]),
-			%% !!!
-			%% Should server send message to terminal before close?
-			%% If so, please check which kind of message
-			%% !!!
-			logerror("Close term socket (~p)~n", [Socket]),
-			connectterm(Socket,?UNKNWON_SOCKET_STATE),
-			%%[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
-			%%ets:insert(serverstatetable, {termcount,TermCount-1})
+			logerror("Colose term socket (~p:~p) because of unknown server state : ~p~n", [Address,Port,Msg]),
+			[{termtotalfail,TotalCount}] = ets:lookup(serverstatetable, termtotalfail),
+			ets:insert(serverstatetable,{termtotalfail,TotalCount+1}),
 			deletetermsocket(Socket),
 			closetcpsocket(Socket,"term")
  	after ?TERM_TCP_RECEIVE_TIMEOUT ->
-		logerror("No data from term (~p) after ~p ms~n", [Socket,?TERM_TCP_RECEIVE_TIMEOUT]),
-		connectterm(Socket,?UNKNWON_TERMINAL_STATE),
-		logerror("Close term socket (~p)~n", [Socket]),
-		deletetermsocket(Socket),
+		logerror("Close and delete term socket (~p:~p) because no data is received after ~p ms~n", [Address,Port,?TERM_TCP_RECEIVE_TIMEOUT]),
+		[{termtotalfail,TotalCount}] = ets:lookup(serverstatetable, termtotalfail),
+		ets:insert(serverstatetable,{termtotalfail,TotalCount+1}),
+		deletemansocket(Socket),
 		closetcpsocket(Socket,"term")
-		%%[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
-		%%ets:insert(serverstatetable, {termcount,TermCount-1})
-		
     end.
 	
 %%
@@ -1103,63 +1116,56 @@ httpservermessage(Bin) ->
 	true.
 
 doconnecttcpserver(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Socket,TimeStamp,Bin) ->
-	[{jitserverfail,JitFC}] = ets:lookup(serverstatetable, jitserverfail),
+	{_,{Address,Port}}=getsafepeername(Socket),
+	JitMsgCount=ets:select_count(msg2jittable, [{{'$1','$2','$3'},[],[true]}]),
 	if
-		JitFC > ?CONNECT_JIT_MAX_COUNT ->
-			%% !!!
-			%% We need to report this status to the terminal
-			%% How do we define this message data?
-			%% !!!
-			logerror("~p continous failures in both jit servers and msg2jit will be stored~n",[?CONNECT_JIT_MAX_COUNT]),
-			ets:insert(msg2jittable, {TimeStamp,Socket,Bin}),
-			JitMsgCount=ets:select_count(msg2jittable, [{{'$1','$2','$3'},[],[true]}]),
-			%%loginfo("Already stored msg2jit message count : ~p~n",[JitMsgCount]),
-			if
-				JitMsgCount > ?TO_JIT_MAX_MESSAGE_COUNT ->  %% Should these data be saved and the msg2jittable be cleared?
-					ok;
-				JitMsgCount =< ?TO_JIT_MAX_MESSAGE_COUNT ->
-					ok
-			end,
-			%% !!!
-			%% Should send message to terminal before close
-			%% Please check which kind of message
-			%% !!!
-			connectterm(Socket,?MT_JIT_FAILURE),
-			%%[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
-			%%ets:insert(serverstatetable, {termcount,TermCount-1});
+		JitMsgCount > ?TO_JIT_MAX_MESSAGE_COUNT ->
+			logerror("The current msg2jit will be discarded because the count of msg2jit ~p > the max number : ~p~n",[JitMsgCount,?TO_JIT_MAX_MESSAGE_COUNT]),
+			logerror("Delete and close the current term socket (~p:~p)~n",[Address,Port]),
 			deletetermsocket(Socket),
 			closetcpsocket(Socket,"term");
-		JitFC =< ?CONNECT_JIT_MAX_COUNT ->
-			%% We must check which jit tcp sever we should use.
-			[{usemasterjit,UseMaster}] = ets:lookup(serverstatetable, usemasterjit),
-			case connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,UseMaster,Socket,TimeStamp,Bin) of
-				{ok, BinResp} ->
-					%%loginfo("Data from jit server : ~p~n",BinResp),
-					case connectterm(Socket,BinResp) of
-						ok ->
-				 	        inet:setopts(Socket,[{active,once}]),
-				            loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2);
-						{error,_} ->
-							logerror("Close term socket and store msg2jit~n"),
-							ets:insert(msg2jittable, {TimeStamp,Socket,Bin}),
+		JitMsgCount =< ?TO_JIT_MAX_MESSAGE_COUNT ->
+			[{jitservercontfail,JitContFail}] = ets:lookup(serverstatetable, jitservercontfail),
+			if
+				JitContFail > ?CONNECT_JIT_CONT_FAIL_COUNT ->
+					logerror("~p continous failures in both jit servers ( > ~p ) and msg2jit will be stored~n",[JitContFail,?CONNECT_JIT_CONT_FAIL_COUNT]),
+					ets:insert(msg2jittable, {TimeStamp,Socket,Bin}),
+					{_,{Address,Port}}=getsafepeername(Socket),
+					logerror("Close and delete term socket (~p:~p)~n", [Address,Port]),
+					deletetermsocket(Socket),
+					closetcpsocket(Socket,"term");
+				JitContFail =< ?CONNECT_JIT_CONT_FAIL_COUNT ->
+					[{usemasterjit,UseMaster}] = ets:lookup(serverstatetable, usemasterjit),
+					case connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,UseMaster,Socket,TimeStamp,Bin) of
+						{ok, BinResp} ->
+							ets:insert(serverstatetable, {jitservercontfail,0}),
+							%%JitTimeStamp = calendar:now_to_local_time(erlang:now()),
+							%%ets:insert(serverstatetable,{lastjittimestamp,JitTimeStamp}),
+							case connectterm(Socket,BinResp) of
+								ok ->
+						 	        inet:setopts(Socket,[{active,once}]),
+						            loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2);
+									%%TermTimeStamp = calendar:now_to_local_time(erlang:now()),
+									%%ets:insert(serverstatetable,{lasttermtimestamp,TermTimeStamp});
+								{error,Reason} ->
+									logerror("Close and delete term socket (~p:~p) because of both jit servers error : ~p~n",[Address,Port,Reason]),
+									%% !!!
+									%% Need to consider whether it is necessary to store the response from jit server to the terminal
+									%% !!!
+									%%logerror("Close and delete term socket (~p:~p) and msg2terminal will be store because of term socket error : ~p~n",[Address,Port,Reason]),
+									%%ets:insert(msg2terminaltable, {TimeStamp,Socket,BinResp}),
+									[{termtotalfail,TotalCount}] = ets:lookup(serverstatetable, termtotalfail),
+									ets:insert(serverstatetable,{termtotalfail,TotalCount+1}),
+									deletetermsocket(Socket),
+									closetcpsocket(Socket,"term")
+							end;
+						{error,Reason} ->
+							logerror("Close and delete term socket (~p:~p) because of both jit servers error : ~p~n",[Address,Port,Reason]),
+							%%[{termtotalfail,TotalCount}] = ets:lookup(serverstatetable, termtotalfail),
+							%%ets:insert(serverstatetable,{termtotalfail,TotalCount+1}),
 							deletetermsocket(Socket),
 							closetcpsocket(Socket,"term")
-							%%[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
-							%%ets:insert(serverstatetable, {termcount,TermCount-1})
-					end;
-				{error,Reason} ->
-					logerror("Both jit servers error : ~p~n",Reason),
-					logerror("Close term socket and save msg2jit~n"),
-					ets:insert(msg2jittable, {TimeStamp,Socket,Bin}),
-					%% !!!
-					%% Should send message to terminal before close
-					%% Please check which kind of message
-					%% !!!
-					connectterm(Socket,?MT_JIT_FAILURE),
-					deletetermsocket(Socket),
-					closetcpsocket(Socket,"term")
-					%%[{termcount,TermCount}] = ets:lookup(serverstatetable, termcount),
-					%%ets:insert(serverstatetable, {termcount,TermCount-1})
+					end
 			end
 	end.
 
@@ -1171,40 +1177,41 @@ doconnecttcpserver(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Socke
 connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,UseMaster,Socket,TimeStamp,Bin) ->
 	if
 		UseMaster == true ->
-			%%loginfo("Connect master~n"),
-			[{masterjitfail,MJitFC}] = ets:lookup(serverstatetable, masterjitfail),
-			case connectonetcpserver(TcpServer,TcpPort,Bin) of
-				{ok,BinResp} ->
-					%% !!!
-					%% Since master is ok, send stored msg2http to it.
-					%% !!!
-					ets:insert(serverstatetable, {masterjitfail,0}),
-					connecttcpserverstored(TcpServer,TcpPort,TcpServer2,TcpPort2,true),
-					{ok,BinResp};
-				{error,Reason} ->
-					logerror("Master fails : ~p~n",Reason),
-					logerror("Try slave~n"),
-					ets:insert(serverstatetable, {masterjitfail,MJitFC+1}),
-					connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,false,Socket,TimeStamp,Bin)
+			[{masterjitcontfail,MJitContFail}] = ets:lookup(serverstatetable, masterjitcontfail),
+			if
+				MJitContFail > ?CONNECT_JIT_CONT_FAIL_COUNT ->
+					logwarning("~p continous failures in master jit servers ( > ~p ) and use slave~n",[MJitContFail,?CONNECT_JIT_CONT_FAIL_COUNT]),
+					connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,false,Socket,TimeStamp,Bin);
+				MJitContFail =< ?CONNECT_JIT_CONT_FAIL_COUNT ->
+					case connectonetcpserver(TcpServer,TcpPort,Bin) of
+						{ok,BinResp} ->
+							ets:insert(serverstatetable, {masterjitcontfail,0}),
+							ets:insert(serverstatetable, {jitservercontfail,0}),
+							%% Since master is ok, send stored msg2http to it.
+							connecttcpserverstored(TcpServer,TcpPort,TcpServer2,TcpPort2,true),
+							{ok,BinResp};
+						{error,Reason} ->
+							ets:insert(serverstatetable, {masterjitcontfail,MJitContFail+1}),
+							[{masterjittotalfail,MJitTotalFail}] = ets:lookup(serverstatetable, masterjittotalfail),
+							ets:insert(serverstatetable, {masterjittotalfail,MJitTotalFail+1}),
+							logerror("Master fails and try slave because of ~p~n",Reason),
+							connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,false,Socket,TimeStamp,Bin)
+					end
 			end;
 		UseMaster == false ->
-			%%loginfo("Connect slave jit server~n"),
 			case connectonetcpserver(TcpServer2,TcpPort2,Bin) of
 				{ok,BinResp2} ->
-					%% !!!
+					ets:insert(serverstatetable, {jitservercontfail,0}),
 					%% Since slave is ok, send stored msg2http to it.
-					%% !!!
 					connecttcpserverstored(TcpServer,TcpPort,TcpServer2,TcpPort2,false),
 					{ok,BinResp2};
 				{error,Reason2} ->
-					logerror("Slave jit server fails and store msg2jit~n"),
-					%% !!!
-					%% We need to report this status to the terminal
-					%% How do we define this message data?
-					%% !!!
-					[{jitserverfail,JitFC}] = ets:lookup(serverstatetable, jitserverfail),
-					ets:insert(serverstatetable, {jitserverfail,JitFC+1}),
-					ets:insert(msg2jittable,{TimeStamp,Socket,Bin}),
+					ets:insert(msg2jittable, {TimeStamp,Socket,Bin}),
+					[{jitservercontfail,JitContFail}] = ets:lookup(serverstatetable, jitservercontfail),
+					ets:insert(serverstatetable, {jitservercontfail,JitContFail+1}),
+					[{jitservertotalfail,JitTotalFail}] = ets:lookup(serverstatetable, jitservertotalfail),
+					ets:insert(serverstatetable, {jitservertotalfail,JitTotalFail+1}),
+					logerror("Both jit server fails because of ~p~n",Reason2),
 					{error,Reason2}
 			end
 	end.
@@ -1227,33 +1234,32 @@ connectonetcpserver(TcpServer,TcpPort,Bin) ->
 							closetcpsocket(Socket,lists:flatten(io_lib:format("jit server : ~p:~p",[TcpServer,TcpPort]))),
 							{ok,BinResp};
 						{tcp_closed,Socket} ->
-							logerror("Jit server close socket ~p:~p (~p)~n", [TcpServer,TcpPort,Socket]),
-							{error,"JIT server close socket."};
+							logerror("Jit server close socket ~p:~p~n", [TcpServer,TcpPort]),
+							{error,"Jit server close socket."};
+						{tcp_error,Socket} ->
+				            logerror("Close jit server socket (~p:~p) because of tcp_error~n", [TcpServer,TcpPort]),
+							closetcpsocket(Socket,lists:flatten(io_lib:format("jit server : ~p:~p",[TcpServer,TcpPort]))),
+							{error,"Jit server tcp_error"};
 						{tcp_error,Socket,Reason} ->
-				            logerror("Jit server socket ~p:~p (~p) error : ~p~n", [TcpServer,TcpPort,Socket,Reason]),
-							logerror("Close jit server socket~n"),
+				            logerror("Close jit server socket (~p:~p) because of tcp_error : ~p~n", [TcpServer,TcpPort,Reason]),
 							closetcpsocket(Socket,lists:flatten(io_lib:format("jit server : ~p:~p",[TcpServer,TcpPort]))),
 							{error,Reason};
 						Msg ->
-							logerror("Unknown server state for jit server socket ~p:~p (~p) : ~p~n", [TcpServer,TcpPort,Socket,Msg]),
-							logerror("Close jit server socket~n"),
+							logerror("Close jit server socket (~p:~p) because of unknown state : ~p~n", [TcpServer,TcpPort,Msg]),
 							closetcpsocket(Socket,lists:flatten(io_lib:format("jit server : ~p:~p",[TcpServer,TcpPort]))),
 							{error,Msg}
 					after ?JIT_TCP_RECEIVE_TIMEOUT ->
-						logerror("No data from jit server ~p:~p (~p) after ~p ms~n", [TcpServer,TcpPort,Socket,?JIT_TCP_RECEIVE_TIMEOUT]),
-						logerror("Close jit server socket~n"),
+						logerror("Close jit server socket (~p:~p) because of no data received after ~p ms~n", [TcpServer,TcpPort,?JIT_TCP_RECEIVE_TIMEOUT]),
 						closetcpsocket(Socket,lists:flatten(io_lib:format("jit server : ~p:~p",[TcpServer,TcpPort]))),
-						{error,"JIT server timeout in response"}
+						{error,"Jit server timeout in response"}
 					end;
 				{error,Reason} ->
-					logerror("Send data to jit server ~p:~p (~p) fails : ~p~n",[TcpServer,TcpPort,Socket,Reason]),
-					logerror("Close jit server socket~n"),
+					logerror("Close jit server socket (~p:~p) because of sending data to jit server fails : ~p~n",[TcpServer,TcpPort,Reason]),
 					closetcpsocket(Socket,lists:flatten(io_lib:format("jit server : ~p:~p",[TcpServer,TcpPort]))),
 					{error,Reason}
 			catch
                 _:Why ->
-					logerror("Send data to jit tcp server (~p) exception : ~p~n",[Socket,Why]),
-					logerror("Close jit server socket~n"),
+					logerror("Close jit server socket (~p:~p) because of sending data to jit tcp server exception : ~p~n",[TcpServer,TcpPort,Why]),
 					closetcpsocket(Socket,lists:flatten(io_lib:format("jit server : ~p:~p",[TcpServer,TcpPort]))),
 					{error,Why}
 			end;
@@ -1332,31 +1338,31 @@ connectterminal(Socket,Bin,SendBinary,IsManagement) ->
 		SendBinary == true ->
 			case is_list(Bin) of
 				true ->
-					BinResp = list_to_binary(Bin);
+					BinSent = list_to_binary(Bin);
 				false ->
 					case is_binary(Bin) of
 						true ->
-							BinResp = Bin;
+							BinSent = Bin;
 						false ->
 							logerror("Unknown server data : ~p~n",[Bin]),
-							BinResp = ?UNKNWON_SERVER_DATA
+							BinSent = ?UNKNWON_SERVER_DATA
 					end
 			end;
 		SendBinary == false ->
 			case is_binary(Bin) of
 				true ->
-					BinResp = binary_to_list(Bin);
+					BinSent = binary_to_list(Bin);
 				false ->
 					case is_list(Bin) of
 						true ->
-							BinResp = Bin;
+							BinSent = Bin;
 						false ->
 							logerror("Unknown server data : ~p~n",[Bin]),
-							BinResp = ?UNKNWON_SERVER_DATA
+							BinSent = ?UNKNWON_SERVER_DATA
 					end
 			end
 	end,
-	try gen_tcp:send(Socket,BinResp) of
+	try gen_tcp:send(Socket,BinSent) of
 		ok ->
 			ok;
 		{error,Reason} ->
@@ -1382,15 +1388,10 @@ closetcpsocket(Socket,Who) ->
 %%
 inserttermsocket(Socket) ->
 	TimeStamp = calendar:now_to_local_time(erlang:now()),
-	try inet:peername(Socket) of
+	case safepeername(Socket) of
 		{ok,{Address,Port}} ->
 			ets:insert(terminstancetable, {Socket,Address,Port,TimeStamp});
-		{error,Reason} ->
-			logerror("Check term socket fails : ~p",Reason),
-			ets:insert(terminstancetable, {Socket,"0.0.0.0","0",TimeStamp})
-	catch
-		_:Why ->
-			logerror("Check term socket exception : ~p",Why),
+		{error,_} ->
 			ets:insert(terminstancetable, {Socket,"0.0.0.0","0",TimeStamp})
 	end.
 
@@ -1403,20 +1404,73 @@ deletetermsocket(Socket) ->
 %%
 insertmansocket(Socket) ->
 	TimeStamp = calendar:now_to_local_time(erlang:now()),
-	try inet:peername(Socket) of
+	case safepeername(Socket) of
 		{ok,{Address,Port}} ->
 			ets:insert(maninstancetable, {Socket,Address,Port,TimeStamp});
-		{error,Reason} ->
-			logerror("Check man term socket fails : ~p",Reason),
-			ets:insert(maninstancetable, {Socket,"0.0.0.0","0",TimeStamp})
-	catch
-		_:Why ->
-			logerror("Check man term socket exception : ~p",Why),
+		{error,_} ->
 			ets:insert(maninstancetable, {Socket,"0.0.0.0","0",TimeStamp})
 	end.
 
 deletemansocket(Socket) ->
 	ets:delete(maninstancetable, Socket).
+
+%%
+%% default is man term
+%%
+%% {ok,{Address,Port}} -> Address is string, Port is "0" or number
+%% {error,Reason}
+%%
+%%
+safepeername(Socket) ->
+	safepeername(Socket,true).
+
+%%
+%% {ok,{Address,Port}} -> Address is string, Port is "0" or number
+%% {error,Reason}
+%%
+safepeername(Socket,IsMan) ->
+	try inet:peername(Socket) of
+		{ok,{Address,Port}} ->
+			{ok,{inet_parse:ntoa(Address),Port}};
+		{error,Reason} ->
+			if
+				IsMan == true ->
+					logerror("Check man term socket (~p) fails : ~p",[Socket,Reason]);
+				IsMan == false ->
+					logerror("Check term socket (~p) fails : ~p",[Socket,Reason])
+			end,
+			{error,Reason}
+	catch
+		_:Why ->
+			if
+				IsMan == true ->
+					logerror("Check man termsocket (~p) exception : ~p",[Socket,Why]);
+				IsMan == false ->
+					logerror("Check term socket (~p) exception : ~p",[Socket,Why])
+			end,
+			{error,Why}
+	end.
+
+%%
+%% default is man term
+%%
+%% {ok,{Address,Port}} -> Address is string, Port is "0" or number
+%% {error,Reason}
+%%
+getsafepeername(Socket) ->
+	getsafepeername(Socket,true).
+
+%%
+%% {ok,{Address,Port}} -> Address is string, Port is "0" or number
+%% {error,Reason}
+%%
+getsafepeername(Socket,IsMan) ->
+	case safepeername(Socket,IsMan) of
+		{ok,{Address,Port}} ->
+			{ok,{Address,Port}};
+		{error,_} ->
+			{error,{"0.0.0.0","0"}}
+	end.
 
 %% Each time when the server startup,
 %% the saved old requests should first be processed.

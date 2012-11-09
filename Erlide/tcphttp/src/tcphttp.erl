@@ -281,8 +281,8 @@ singlehttpprocess(HttpServer) ->
 			[{httpdispatcher,Pid,_}] = ets:lookup(serverstatetable, httpdispatcher),
 			case HDPid of
 				Pid ->
-					{TimeStamp,Socket,HttpBin} = Msg,
-					case connecthttpserver(HttpServer,TimeStamp,Socket,HttpBin) of
+					{TimeStamp,Address,Port,HttpBin} = Msg,
+					case connecthttpserver(HttpServer,TimeStamp,Address,Port,HttpBin) of
 						ok ->
 							singlehttpprocess(HttpServer);
 						{error,Reason} ->
@@ -304,12 +304,13 @@ singlehttpprocess(HttpServer) ->
 %%get(URL)                     -> request(get,  {URL, []}).
 %%head(URL)                    -> request(head, {URL, []}).
 %%
-connecthttpserver(HttpServer,TimeStamp,Socket,HttpBin) ->
+connecthttpserver(HttpServer,TimeStamp,Address,Port,HttpBin) ->
 	%% !!!
 	%% Please check the parameters of the method httpc:request(...)
 	%% !!!
 	TimeStamp,
-	Socket,
+	Address,
+	Port,
 	ContentType = "text/json",
 	Options = [{body_format,binary}],
 	try httpc:request(post,{HttpServer,[],ContentType,HttpBin},[],Options) of
@@ -600,7 +601,7 @@ doprocessmanagementdata(Bin) ->
 							%% !!!
 							?MT_QRY_ALL_2HTTP_CLR_ERR;
 						?MT_QRY_ALL_2HTTP_COUNT ->
-							Value = ets:select_count(msg2httptable, [{{'$1','$2','$3'},[],[true]}]),
+							Value = ets:select_count(msg2httptable, [{{'$1','$2','$3','$4'},[],[true]}]),
 							Str=integer_to_list(Value),
 							string:concat(?MT_QRY_ALL_2HTTP_COUNT_OK, Str);
 						?MT_QRY_ALL_2JIT ->		
@@ -614,7 +615,7 @@ doprocessmanagementdata(Bin) ->
 							%% !!!
 							?MT_QRY_ALL_2JIT_CLR_ERR;
 						?MT_QRY_ALL_2JIT_COUNT ->
-							Value = ets:select_count(msg2jittable, [{{'$1','$2','$3'},[],[true]}]),
+							Value = ets:select_count(msg2jittable, [{{'$1','$2','$3','$4'},[],[true]}]),
 							Str=integer_to_list(Value),
 							string:concat(?MT_QRY_ALL_2JIT_COUNT_OK, Str);
 						?MT_QRY_ALL_2TERM ->
@@ -631,7 +632,7 @@ doprocessmanagementdata(Bin) ->
 							%% !!!
 							%% Need further job here because we don't know the message format in msg2terminaltable
 							%% !!!
-							Value = ets:select_count(msg2terminaltable, [{{'$1','$2','$3'},[],[true]}]),
+							Value = ets:select_count(msg2terminaltable, [{{'$1','$2','$3','$4'},[],[true]}]),
 							Str=integer_to_list(Value),
 							string:concat(?MT_QRY_ALL_2TERM_COUNT_OK, Str);
 						?MT_QRY_ALL_LOG ->
@@ -879,16 +880,16 @@ dogetallstates() ->
 	[{logserverlevel,LogLevel}] = ets:lookup(serverstatetable,logserverlevel),
 	S100 = string:concat(S9, ";LogLevel:"),
 	S10 = string:concat(S100, integer_to_list(LogLevel)),
-	Msg2JitCount = ets:select_count(msg2jittable, [{{'$1','$2','$3'},[],[true]}]),
+	Msg2JitCount = ets:select_count(msg2jittable, [{{'$1','$2','$3','$4'},[],[true]}]),
 	S110 = string:concat(S10, ";Msg2JitCount:"),
 	S11 = string:concat(S110, integer_to_list(Msg2JitCount)),
-	Msg2HttpCount = ets:select_count(msg2httptable, [{{'$1','$2','$3'},[],[true]}]),
+	Msg2HttpCount = ets:select_count(msg2httptable, [{{'$1','$2','$3','$4'},[],[true]}]),
 	S120 = string:concat(S11, ";Msg2HttpCount:"),
 	S12 = string:concat(S120, integer_to_list(Msg2HttpCount)),
 	LogCount = ets:select_count(serverlogtable, [{{'$1','$2','$3'},[],[true]}]),
 	S130 = string:concat(S12, ";LogCount:"),
 	S13 = string:concat(S130, integer_to_list(LogCount)),
-	Msg2TermCount = ets:select_count(msg2terminaltable, [{{'$1','$2','$3'},[],[true]}]),
+	Msg2TermCount = ets:select_count(msg2terminaltable, [{{'$1','$2','$3','$4'},[],[true]}]),
 	S140 = string:concat(S13, ";Msg2TermCount:"),
 	S14 = string:concat(S140, integer_to_list(Msg2TermCount)),
 	MTermInstCount = ets:select_count(maninstancetable, [{{'$1','$2','$3','$4'},[],[true]}]),
@@ -1029,7 +1030,7 @@ loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2) ->
 			TimeStamp = calendar:now_to_local_time(erlang:now()),
 			case httpservermessage(Bin) of
 				true ->
-					HttpMsgCount=ets:select_count(msg2httptable, [{{'$1','$2','$3'},[],[true]}]),
+					HttpMsgCount=ets:select_count(msg2httptable, [{{'$1','$2','$3','$4'},[],[true]}]),
 					if
 						HttpMsgCount > ?TO_HTTP_MAX_MESSAGE_COUNT -> 
 							logerror("The current msg2http will be discarded because the count of msg2http ~p > the max number : ~p~n",[HttpMsgCount,?TO_HTTP_MAX_MESSAGE_COUNT]);
@@ -1058,7 +1059,7 @@ loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2) ->
 										NormalHttpProcCount >= ?HTTP_PROCESSES_MIN_COUNT ->
 											ok
 									end,
-									ets:insert(msg2httptable, {TimeStamp,Socket,HttpBin}),
+									ets:insert(msg2httptable, {TimeStamp,Address,Port,HttpBin}),
 									doconnecttcpserver(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Socket,TimeStamp,Bin)
 							end
 					end;
@@ -1117,7 +1118,7 @@ httpservermessage(Bin) ->
 
 doconnecttcpserver(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Socket,TimeStamp,Bin) ->
 	{_,{Address,Port}}=getsafepeername(Socket),
-	JitMsgCount=ets:select_count(msg2jittable, [{{'$1','$2','$3'},[],[true]}]),
+	JitMsgCount=ets:select_count(msg2jittable, [{{'$1','$2','$3','$4'},[],[true]}]),
 	if
 		JitMsgCount > ?TO_JIT_MAX_MESSAGE_COUNT ->
 			logerror("The current msg2jit will be discarded because the count of msg2jit ~p > the max number : ~p~n",[JitMsgCount,?TO_JIT_MAX_MESSAGE_COUNT]),
@@ -1129,7 +1130,7 @@ doconnecttcpserver(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Socke
 			if
 				JitContFail > ?CONNECT_JIT_CONT_FAIL_COUNT ->
 					logerror("~p continous failures in both jit servers ( > ~p ) and msg2jit will be stored~n",[JitContFail,?CONNECT_JIT_CONT_FAIL_COUNT]),
-					ets:insert(msg2jittable, {TimeStamp,Socket,Bin}),
+					ets:insert(msg2jittable, {TimeStamp,Address,Port,Bin}),
 					{_,{Address,Port}}=getsafepeername(Socket),
 					logerror("Close and delete term socket (~p:~p)~n", [Address,Port]),
 					deletetermsocket(Socket),
@@ -1153,7 +1154,7 @@ doconnecttcpserver(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Socke
 									%% Need to consider whether it is necessary to store the response from jit server to the terminal
 									%% !!!
 									%%logerror("Close and delete term socket (~p:~p) and msg2terminal will be store because of term socket error : ~p~n",[Address,Port,Reason]),
-									%%ets:insert(msg2terminaltable, {TimeStamp,Socket,BinResp}),
+									%%ets:insert(msg2terminaltable, {TimeStamp,Address,Port,BinResp}),
 									[{termtotalfail,TotalCount}] = ets:lookup(serverstatetable, termtotalfail),
 									ets:insert(serverstatetable,{termtotalfail,TotalCount+1}),
 									deletetermsocket(Socket),
@@ -1206,7 +1207,8 @@ connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,UseMaster,Socket,TimeStam
 					connecttcpserverstored(TcpServer,TcpPort,TcpServer2,TcpPort2,false),
 					{ok,BinResp2};
 				{error,Reason2} ->
-					ets:insert(msg2jittable, {TimeStamp,Socket,Bin}),
+					{_,{Address,Port}}=getsafepeername(Socket),
+					ets:insert(msg2jittable, {TimeStamp,Address,Port,Bin}),
 					[{jitservercontfail,JitContFail}] = ets:lookup(serverstatetable, jitservercontfail),
 					ets:insert(serverstatetable, {jitservercontfail,JitContFail+1}),
 					[{jitservertotalfail,JitTotalFail}] = ets:lookup(serverstatetable, jitservertotalfail),

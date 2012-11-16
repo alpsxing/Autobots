@@ -409,9 +409,11 @@ init(DisplayLog,LogLevel) ->
 %%
 connectmanagement(Listen,Count) ->
 	if
-		Count > ?ACCEPT_MT_ERROR_CONT_MAX ->
-			logerror("Stop accepting man-term because of continous ~p failures > limit ~p~n",[Count,?ACCEPT_MT_ERROR_CONT_MAX]);
-		Count =< ?ACCEPT_MT_ERROR_CONT_MAX ->
+		Count == ?ACCEPT_MT_ERROR_CONT_MAX ->
+			logerror("Stop accepting man-term because of continous failures reaches the limit : ~p~n",[?ACCEPT_MT_ERROR_CONT_MAX]);
+		Count > ?ACCEPT_MT_ERROR_CONT_MAX + 1 ->
+			ok;
+		Count < ?ACCEPT_MT_ERROR_CONT_MAX ->
 		    try	gen_tcp:accept(Listen) of
 				{ok,Socket} ->
 					spawn(fun() -> connectmanagement(Listen,0) end),
@@ -992,8 +994,10 @@ doresetallstates() ->
 connect(Listen,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Count) ->
 	if
 		Count > ?ACCEPT_TERM_ERROR_CONT_MAX ->
-			logerror("Stop accepting term because of continous ~p failures > limit ~p~n",[Count,?ACCEPT_TERM_ERROR_CONT_MAX]);
-		Count =< ?ACCEPT_TERM_ERROR_CONT_MAX ->
+			ok;
+		Count == ?ACCEPT_TERM_ERROR_CONT_MAX ->
+			logerror("Stop accepting term because of continous failures reaches the limit : ~p~n",[?ACCEPT_TERM_ERROR_CONT_MAX]);
+		Count < ?ACCEPT_TERM_ERROR_CONT_MAX ->
 		    try	gen_tcp:accept(Listen) of
 				{ok,Socket} ->
 		           	spawn(fun() -> connect(Listen,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,1) end),
@@ -1031,20 +1035,20 @@ loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2) ->
 			case httpservermessage(Bin) of
 				true ->
 					HttpMsgCount=ets:select_count(msg2httptable, [{{'$1','$2','$3','$4'},[],[true]}]),
-					if
-						HttpMsgCount > ?TO_HTTP_MAX_MESSAGE_COUNT -> 
-							logerror("The current msg2http will be discarded because the count of msg2http ~p > the max number : ~p~n",[HttpMsgCount,?TO_HTTP_MAX_MESSAGE_COUNT]);
-						HttpMsgCount > ?TO_HTTP_WARN_MESSAGE_COUNT ->
-							logwarning("The count of msg2http : ~p > the warning number : ~p~n",[HttpMsgCount,?TO_HTTP_WARN_MESSAGE_COUNT]);
-						HttpMsgCount =< ?TO_HTTP_WARN_MESSAGE_COUNT ->
+					case HttpMsgCount of
+						?TO_HTTP_WARN_MESSAGE_COUNT ->
+							logwarning("The count of msg2http reaches the warning number : ~p~n",[?TO_HTTP_WARN_MESSAGE_COUNT]);
+						?TO_HTTP_MAX_MESSAGE_COUNT -> 
+							logerror("New msg2http will be discarded because the count of msg2http reaches the max number : ~p~n",[?TO_HTTP_MAX_MESSAGE_COUNT]);
+						_ ->
 							ok
 					end,
 					if
-						HttpMsgCount > ?TO_HTTP_MAX_MESSAGE_COUNT ->
-							logerror("Delete and close the current term socket (~p:~p)~n",[Address,Port]),
+						HttpMsgCount >= ?TO_HTTP_MAX_MESSAGE_COUNT ->
+							logerror("Delete and close the current term socket (~p:~p) because the count of msg2http reaches the max number : ~p~n",[Address,Port,?TO_HTTP_MAX_MESSAGE_COUNT]),
 							deletetermsocket(Socket),
 							closetcpsocket(Socket,"term");
-						HttpMsgCount =< ?TO_HTTP_MAX_MESSAGE_COUNT ->
+						HttpMsgCount < ?TO_HTTP_MAX_MESSAGE_COUNT ->
 				            HttpBin = dataprocessor:tcp2http(Bin),
 							NormalHttpProcCount=ets:select_count(normalhttpprocesstable, [{{'$1'},[],[true]}]),
 							if
@@ -1071,10 +1075,10 @@ loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2) ->
 							deletetermsocket(Socket),
 							closetcpsocket(Socket,"term");
 						NormalHttpProcCount >= 1 ->
-							if
-								NormalHttpProcCount < ?HTTP_PROCESSES_MIN_COUNT ->
-									logwarning("The count of active http connections (~p) < the warning number : ~p~n",[NormalHttpProcCount,?HTTP_PROCESSES_MIN_COUNT]);
-								NormalHttpProcCount >= ?HTTP_PROCESSES_MIN_COUNT ->
+							case NormalHttpProcCount of
+								?HTTP_PROCESSES_MIN_COUNT ->
+									logwarning("The count of active http connections is decreased to the warning number : ~p~n",[?HTTP_PROCESSES_MIN_COUNT]);
+								_ ->
 									ok
 							end,
 							doconnecttcpserver(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Socket,TimeStamp,Bin)
@@ -1118,56 +1122,62 @@ httpservermessage(Bin) ->
 
 doconnecttcpserver(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2,Socket,TimeStamp,Bin) ->
 	{_,{Address,Port}}=getsafepeername(Socket),
+	[{jitservercontfail,JitContFail}] = ets:lookup(serverstatetable, jitservercontfail),
+	if
+		JitContFail == ?CONNECT_JIT_CONT_FAIL_COUNT ->
+			logerror("New msg2jit will be stored becasue the count of continous failures in both jit servers reaches the limit : ~p~n",[?CONNECT_JIT_CONT_FAIL_COUNT]),
+			savemsg2tcp(TimeStamp,Address,Port,Bin),
+			logerror("Close and delete term socket (~p:~p)~n", [Address,Port]),
+			deletetermsocket(Socket),
+			closetcpsocket(Socket,"term");
+		JitContFail > ?CONNECT_JIT_CONT_FAIL_COUNT ->
+			savemsg2tcp(TimeStamp,Address,Port,Bin),			
+			logerror("Close and delete term socket (~p:~p)~n", [Address,Port]),
+			deletetermsocket(Socket),
+			closetcpsocket(Socket,"term");
+		JitContFail < ?CONNECT_JIT_CONT_FAIL_COUNT ->
+			[{usemasterjit,UseMaster}] = ets:lookup(serverstatetable, usemasterjit),
+			case connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,UseMaster,Socket,TimeStamp,Bin) of
+				{ok, BinResp} ->
+					ets:insert(serverstatetable, {jitservercontfail,0}),
+					%%JitTimeStamp = calendar:now_to_local_time(erlang:now()),
+					%%ets:insert(serverstatetable,{lastjittimestamp,JitTimeStamp}),
+					case connectterm(Socket,BinResp) of
+						ok ->
+				 	        inet:setopts(Socket,[{active,once}]),
+				            loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2);
+							%%TermTimeStamp = calendar:now_to_local_time(erlang:now()),
+							%%ets:insert(serverstatetable,{lasttermtimestamp,TermTimeStamp});
+						{error,Reason} ->
+							logerror("Close and delete term socket (~p:~p) because of both jit servers error : ~p~n",[Address,Port,Reason]),
+							%% !!!
+							%% Need to consider whether it is necessary to store the response from jit server to the terminal
+							%% !!!
+							%%logerror("Close and delete term socket (~p:~p) and msg2terminal will be store because of term socket error : ~p~n",[Address,Port,Reason]),
+							%%ets:insert(msg2terminaltable, {TimeStamp,Address,Port,BinResp}),
+							[{termtotalfail,TotalCount}] = ets:lookup(serverstatetable, termtotalfail),
+							ets:insert(serverstatetable,{termtotalfail,TotalCount+1}),
+							deletetermsocket(Socket),
+							closetcpsocket(Socket,"term")
+					end;
+				{error,Reason} ->
+					logerror("Close and delete term socket (~p:~p) because of both jit servers error : ~p~n",[Address,Port,Reason]),
+					%%[{termtotalfail,TotalCount}] = ets:lookup(serverstatetable, termtotalfail),
+					%%ets:insert(serverstatetable,{termtotalfail,TotalCount+1}),
+					deletetermsocket(Socket),
+					closetcpsocket(Socket,"term")
+			end
+	end.
+
+savemsg2tcp(TimeStamp,Address,Port,Bin) ->
 	JitMsgCount=ets:select_count(msg2jittable, [{{'$1','$2','$3','$4'},[],[true]}]),
 	if
 		JitMsgCount > ?TO_JIT_MAX_MESSAGE_COUNT ->
-			logerror("The current msg2jit will be discarded because the count of msg2jit ~p > the max number : ~p~n",[JitMsgCount,?TO_JIT_MAX_MESSAGE_COUNT]),
-			logerror("Delete and close the current term socket (~p:~p)~n",[Address,Port]),
-			deletetermsocket(Socket),
-			closetcpsocket(Socket,"term");
-		JitMsgCount =< ?TO_JIT_MAX_MESSAGE_COUNT ->
-			[{jitservercontfail,JitContFail}] = ets:lookup(serverstatetable, jitservercontfail),
-			if
-				JitContFail > ?CONNECT_JIT_CONT_FAIL_COUNT ->
-					logerror("~p continous failures in both jit servers ( > ~p ) and msg2jit will be stored~n",[JitContFail,?CONNECT_JIT_CONT_FAIL_COUNT]),
-					ets:insert(msg2jittable, {TimeStamp,Address,Port,Bin}),
-					{_,{Address,Port}}=getsafepeername(Socket),
-					logerror("Close and delete term socket (~p:~p)~n", [Address,Port]),
-					deletetermsocket(Socket),
-					closetcpsocket(Socket,"term");
-				JitContFail =< ?CONNECT_JIT_CONT_FAIL_COUNT ->
-					[{usemasterjit,UseMaster}] = ets:lookup(serverstatetable, usemasterjit),
-					case connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,UseMaster,Socket,TimeStamp,Bin) of
-						{ok, BinResp} ->
-							ets:insert(serverstatetable, {jitservercontfail,0}),
-							%%JitTimeStamp = calendar:now_to_local_time(erlang:now()),
-							%%ets:insert(serverstatetable,{lastjittimestamp,JitTimeStamp}),
-							case connectterm(Socket,BinResp) of
-								ok ->
-						 	        inet:setopts(Socket,[{active,once}]),
-						            loop(Socket,HttpServer,TcpServer,TcpPort,TcpServer2,TcpPort2);
-									%%TermTimeStamp = calendar:now_to_local_time(erlang:now()),
-									%%ets:insert(serverstatetable,{lasttermtimestamp,TermTimeStamp});
-								{error,Reason} ->
-									logerror("Close and delete term socket (~p:~p) because of both jit servers error : ~p~n",[Address,Port,Reason]),
-									%% !!!
-									%% Need to consider whether it is necessary to store the response from jit server to the terminal
-									%% !!!
-									%%logerror("Close and delete term socket (~p:~p) and msg2terminal will be store because of term socket error : ~p~n",[Address,Port,Reason]),
-									%%ets:insert(msg2terminaltable, {TimeStamp,Address,Port,BinResp}),
-									[{termtotalfail,TotalCount}] = ets:lookup(serverstatetable, termtotalfail),
-									ets:insert(serverstatetable,{termtotalfail,TotalCount+1}),
-									deletetermsocket(Socket),
-									closetcpsocket(Socket,"term")
-							end;
-						{error,Reason} ->
-							logerror("Close and delete term socket (~p:~p) because of both jit servers error : ~p~n",[Address,Port,Reason]),
-							%%[{termtotalfail,TotalCount}] = ets:lookup(serverstatetable, termtotalfail),
-							%%ets:insert(serverstatetable,{termtotalfail,TotalCount+1}),
-							deletetermsocket(Socket),
-							closetcpsocket(Socket,"term")
-					end
-			end
+			ok;
+		JitMsgCount == ?TO_JIT_MAX_MESSAGE_COUNT ->
+			logerror("New msg2jit will be discarded because the count of msg2jit reaches the max number : ~p~n",[?TO_JIT_MAX_MESSAGE_COUNT]);
+		JitMsgCount < ?TO_JIT_MAX_MESSAGE_COUNT ->
+			ets:insert(msg2jittable, {TimeStamp,Address,Port,Bin})
 	end.
 
 %%
@@ -1180,10 +1190,12 @@ connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,UseMaster,Socket,TimeStam
 		UseMaster == true ->
 			[{masterjitcontfail,MJitContFail}] = ets:lookup(serverstatetable, masterjitcontfail),
 			if
-				MJitContFail > ?CONNECT_JIT_CONT_FAIL_COUNT ->
-					logwarning("~p continous failures in master jit servers ( > ~p ) and use slave~n",[MJitContFail,?CONNECT_JIT_CONT_FAIL_COUNT]),
+				MJitContFail == ?CONNECT_JIT_CONT_FAIL_COUNT ->
+					logwarning("Slave will be used because the count of continous failures in master reaches the limit :~p~n",[?CONNECT_JIT_CONT_FAIL_COUNT]),
 					connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,false,Socket,TimeStamp,Bin);
-				MJitContFail =< ?CONNECT_JIT_CONT_FAIL_COUNT ->
+				MJitContFail > ?CONNECT_JIT_CONT_FAIL_COUNT ->
+					connecttcpserver(TcpServer,TcpPort,TcpServer2,TcpPort2,false,Socket,TimeStamp,Bin);
+				MJitContFail < ?CONNECT_JIT_CONT_FAIL_COUNT ->
 					case connectonetcpserver(TcpServer,TcpPort,Bin) of
 						{ok,BinResp} ->
 							ets:insert(serverstatetable, {masterjitcontfail,0}),

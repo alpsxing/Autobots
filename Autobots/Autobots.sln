@@ -19,41 +19,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MFCTestApp", "MFCTestApp\MF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TcpHttpManagement", "TcpHttpManagement\TcpHttpManagement.csproj", "{45C8482E-0632-4BC4-B44F-447CC282D6C0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TcpHttpTestTcpClient", "TcpHttpTestTcpClientSimple\TcpHttpTestTcpClient.csproj", "{F11085CB-05E6-4FA6-9D56-64E7710EAE54}"
+EndProject
 Global
-	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 8
-		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = http://tfs.it.agilent.com:8080/tfs/emg
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = DisplayParameters\\DisplayParameters.csproj
-		SccProjectTopLevelParentUniqueName1 = Autobots.sln
-		SccProjectName1 = DisplayParameters
-		SccLocalPath1 = DisplayParameters
-		SccProjectUniqueName2 = ConsoleTestApp\\ConsoleTestApp.csproj
-		SccProjectTopLevelParentUniqueName2 = Autobots.sln
-		SccProjectName2 = ConsoleTestApp
-		SccLocalPath2 = ConsoleTestApp
-		SccProjectUniqueName3 = TcpHttpTestHttpServer\\TcpHttpTestHttpServer.csproj
-		SccProjectTopLevelParentUniqueName3 = Autobots.sln
-		SccProjectName3 = TcpHttpTestHttpServer
-		SccLocalPath3 = TcpHttpTestHttpServer
-		SccProjectUniqueName4 = tcpHttpTestJitServer\\TcpHttpTestJitServer.csproj
-		SccProjectTopLevelParentUniqueName4 = Autobots.sln
-		SccProjectName4 = TcpHttpTestJitServer
-		SccLocalPath4 = TcpHttpTestJitServer
-		SccProjectUniqueName5 = TcpHttpTestTcpClient\\TcpHttpTestTcpClient.csproj
-		SccProjectTopLevelParentUniqueName5 = Autobots.sln
-		SccProjectName5 = TcpHttpTestTcpClient
-		SccLocalPath5 = TcpHttpTestTcpClient
-		SccProjectUniqueName6 = MFCTestApp\\MFCTestApp.vcxproj
-		SccProjectTopLevelParentUniqueName6 = Autobots.sln
-		SccProjectName6 = MFCTestApp
-		SccLocalPath6 = MFCTestApp
-		SccProjectUniqueName7 = TcpHttpManagement\\TcpHttpManagement.csproj
-		SccProjectTopLevelParentUniqueName7 = Autobots.sln
-		SccProjectName7 = TcpHttpManagement
-		SccLocalPath7 = TcpHttpManagement
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Mixed Platforms = Debug|Mixed Platforms
 		Debug|Win32 = Debug|Win32
@@ -133,6 +101,16 @@ Global
 		{45C8482E-0632-4BC4-B44F-447CC282D6C0}.Release|Win32.ActiveCfg = Release|x86
 		{45C8482E-0632-4BC4-B44F-447CC282D6C0}.Release|x86.ActiveCfg = Release|x86
 		{45C8482E-0632-4BC4-B44F-447CC282D6C0}.Release|x86.Build.0 = Release|x86
+		{F11085CB-05E6-4FA6-9D56-64E7710EAE54}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{F11085CB-05E6-4FA6-9D56-64E7710EAE54}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{F11085CB-05E6-4FA6-9D56-64E7710EAE54}.Debug|Win32.ActiveCfg = Debug|x86
+		{F11085CB-05E6-4FA6-9D56-64E7710EAE54}.Debug|x86.ActiveCfg = Debug|x86
+		{F11085CB-05E6-4FA6-9D56-64E7710EAE54}.Debug|x86.Build.0 = Debug|x86
+		{F11085CB-05E6-4FA6-9D56-64E7710EAE54}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{F11085CB-05E6-4FA6-9D56-64E7710EAE54}.Release|Mixed Platforms.Build.0 = Release|x86
+		{F11085CB-05E6-4FA6-9D56-64E7710EAE54}.Release|Win32.ActiveCfg = Release|x86
+		{F11085CB-05E6-4FA6-9D56-64E7710EAE54}.Release|x86.ActiveCfg = Release|x86
+		{F11085CB-05E6-4FA6-9D56-64E7710EAE54}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
